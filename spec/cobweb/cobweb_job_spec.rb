@@ -9,7 +9,7 @@ describe Cobweb, :local_only => true do
     # START WORKERS ONLY FOR CRAWL QUEUE SO WE CAN COUNT ENQUEUED PROCESS AND FINISH QUEUES
     puts "Starting Workers... Please Wait..."
     `mkdir log`
-    io = IO.popen("nohup rake resque:workers PIDFILE=./tmp/pids/resque.pid COUNT=1 QUEUE=cobweb_crawl_job > log/output.log &")
+    io = IO.popen("nohup rake resque:workers PIDFILE=./tmp/pids/resque.pid COUNT=3 QUEUE=cobweb_crawl_job > log/output.log &")
     puts "Workers Started."
 
   end
@@ -17,6 +17,7 @@ describe Cobweb, :local_only => true do
   before(:each) do
     @base_url = "http://localhost:3532/"
     @base_page_count = 77
+
     clear_queues
   end
 
@@ -29,6 +30,7 @@ describe Cobweb, :local_only => true do
         :debug => false,
         :cache => nil
       }
+      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{@request[:crawl_id]}", Redis.new)
       @cobweb = Cobweb.new @request
     end
     it "should not crawl anything if nothing has started" do
@@ -37,7 +39,7 @@ describe Cobweb, :local_only => true do
       crawl_obj.destroy
       @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
       wait_for_crawl_finished crawl[:crawl_id]
-      Resque.size("cobweb_process_job").should == 0
+      @redis.get("crawl_job_enqueued_count").to_i.should == 0
     end
 
     it "should not complete the crawl when cancelled" do
@@ -47,8 +49,8 @@ describe Cobweb, :local_only => true do
       crawl_obj.destroy
       @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
       wait_for_crawl_finished crawl[:crawl_id]
-      Resque.size("cobweb_process_job").should > 0
-      Resque.size("cobweb_process_job").should_not == @base_page_count
+      @redis.get("crawl_job_enqueued_count").to_i.should > 0
+      @redis.get("crawl_job_enqueued_count").to_i.should_not == @base_page_count
     end
 
   end
@@ -61,22 +63,24 @@ describe Cobweb, :local_only => true do
         :debug => false,
         :cache => nil
       }
+      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{@request[:crawl_id]}", Redis.new)
+
       @cobweb = Cobweb.new @request
     end
 
     it "should crawl entire site" do
-      ap Resque.size("cobweb_process_job")
       crawl = @cobweb.start(@base_url)
       @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
       wait_for_crawl_finished crawl[:crawl_id]
-      ap @stat.get_statistics
-      Resque.size("cobweb_process_job").should == @base_page_count
+      @redis.get("crawl_job_enqueued_count").to_i.should == @base_page_count
+      @redis.get("crawl_finished_enqueued_count").to_i.should == 1
     end
     it "detect crawl finished once" do
       crawl = @cobweb.start(@base_url)
       @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
       wait_for_crawl_finished crawl[:crawl_id]
-      Resque.size("cobweb_finished_job").should == 1
+      @redis.get("crawl_job_enqueued_count").to_i.should == @base_page_count
+      @redis.get("crawl_finished_enqueued_count").to_i.should == 1
     end
   end
   describe "with limited mime_types" do
@@ -87,6 +91,7 @@ describe Cobweb, :local_only => true do
         :cache => nil,
         :valid_mime_types => ["text/html"]
       }
+      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{@request[:crawl_id]}", Redis.new)
       @cobweb = Cobweb.new @request
     end
 
@@ -94,7 +99,7 @@ describe Cobweb, :local_only => true do
       crawl = @cobweb.start(@base_url)
       @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
       wait_for_crawl_finished crawl[:crawl_id]
-      Resque.size("cobweb_process_job").should == 8
+      @redis.get("crawl_job_enqueued_count").to_i.should == 8
 
       mime_types = Resque.peek("cobweb_process_job", 0, 100).map{|job| job["args"][0]["mime_type"]}
       mime_types.count.should == 8
@@ -110,6 +115,7 @@ describe Cobweb, :local_only => true do
         :quiet => true,
         :cache => nil
       }
+      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{@request[:crawl_id]}", Redis.new)
     end
 
     describe "limit to 1" do
@@ -122,19 +128,19 @@ describe Cobweb, :local_only => true do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
         wait_for_crawl_finished crawl[:crawl_id]
-        Resque.size("cobweb_process_job").should_not == @base_page_count
+        @redis.get("crawl_job_enqueued_count").to_i.should_not == @base_page_count
       end
       it "should only crawl 1 page" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
         wait_for_crawl_finished crawl[:crawl_id]
-        Resque.size("cobweb_process_job").should == 1
+        @redis.get("crawl_job_enqueued_count").to_i.should == 1
       end
       it "should notify of crawl finished once" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
         wait_for_crawl_finished crawl[:crawl_id]
-        Resque.size("cobweb_finished_job").should == 1
+        @redis.get("crawl_finished_enqueued_count").to_i.should == 1
       end
     end
 
@@ -145,6 +151,7 @@ describe Cobweb, :local_only => true do
         @cobweb = Cobweb.new @request
       end
 
+      # the following describes when we want all the assets of a page, and the page itself, but we only want 5 pages
       it "should only use html pages towards the crawl limit" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
@@ -165,19 +172,19 @@ describe Cobweb, :local_only => true do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
         wait_for_crawl_finished crawl[:crawl_id]
-        Resque.size("cobweb_process_job").should_not == @base_page_count
+        @redis.get("crawl_job_enqueued_count").to_i.should_not == @base_page_count
       end
       it "should notify of crawl finished once" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
         wait_for_crawl_finished crawl[:crawl_id]
-        Resque.size("cobweb_finished_job").should == 1
+        @redis.get("crawl_finished_enqueued_count").to_i.should == 1
       end
       it "should only crawl 10 objects" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
         wait_for_crawl_finished crawl[:crawl_id]
-        Resque.size("cobweb_process_job").should == 10
+        @redis.get("crawl_job_enqueued_count").to_i.should == 10
       end
     end
 
@@ -191,22 +198,23 @@ describe Cobweb, :local_only => true do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
         wait_for_crawl_finished crawl[:crawl_id]
-        Resque.size("cobweb_process_job").should == @base_page_count
+        @redis.get("crawl_job_enqueued_count").to_i.should == @base_page_count
       end
       it "should notify of crawl finished once" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
         wait_for_crawl_finished crawl[:crawl_id]
-        Resque.size("cobweb_finished_job").should == 1
+        @redis.get("crawl_finished_enqueued_count").to_i.should == 1
       end
       it "should not crawl 100 pages" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
         wait_for_crawl_finished crawl[:crawl_id]
-        Resque.size("cobweb_process_job").should_not == 100
+        @redis.get("crawl_job_enqueued_count").to_i.should_not == 100
       end
     end
   end
+
 
   after(:all) do
 
@@ -220,26 +228,43 @@ describe Cobweb, :local_only => true do
 end
 
 def wait_for_crawl_finished(crawl_id, timeout=20)
-  counter = 0
+  @counter = 0
   start_time = Time.now
   while(running?(crawl_id) && Time.now < start_time + timeout) do
-      sleep 0.5
-    end
-    if Time.now > start_time + timeout
-      raise "End of crawl not detected"
+    sleep 0.5
+  end
+  if Time.now > start_time + timeout
+    raise "End of crawl not detected"
+  end
+end
+
+def running?(crawl_id)
+  status = @stat.get_status
+  result = true
+  if status == CobwebCrawlHelper::STARTING
+    result = true
+  else
+    if status == @last_stat
+      if @counter > 5
+        raise "Static status: #{status}"
+      else
+        @counter += 1
+      end
+      puts "Static Status.. #{6-@counter}"
+    else
+      result = status != CobwebCrawlHelper::FINISHED && status != CobwebCrawlHelper::CANCELLED
     end
   end
+  @last_stat = @stat.get_status
+  result
+end
 
-  def running?(crawl_id)
-    @stat.get_status != CobwebCrawlHelper::FINISHED and @stat.get_status != CobwebCrawlHelper::CANCELLED
+def clear_queues
+  Resque.queues.each do |queue|
+    Resque.remove_queue(queue)
   end
 
-  def clear_queues
-    Resque.queues.each do |queue|
-      Resque.remove_queue(queue)
-    end
-
-    Resque.size("cobweb_process_job").should == 0
-    Resque.size("cobweb_finished_job").should == 0
-    Resque.peek("cobweb_process_job", 0, 200).should be_empty
-  end
+  Resque.size("cobweb_process_job").should == 0
+  Resque.size("cobweb_finished_job").should == 0
+  Resque.peek("cobweb_process_job", 0, 200).should be_empty
+end
