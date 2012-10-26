@@ -94,6 +94,16 @@ class Cobweb
 
   # Performs a HTTP GET request to the specified url applying the options supplied
   def get(url, options = @options)
+    request(url, :get, options)
+  end
+
+  # Performs a HTTP HEAD request to the specified url applying the options supplied
+  def head(url, options = @options)
+    request(url, :head, options)
+  end
+
+  def request(url, type, options= @options)
+
     raise "url cannot be nil" if url.nil?
     uri = Addressable::URI.parse(url)
     uri.normalize!
@@ -141,7 +151,13 @@ class Cobweb
         if options[:cookies]
           request_options[ 'Cookie']= options[:cookies]
         end
-        request = Net::HTTP::Get.new uri.request_uri, request_options
+        
+        if(type == :get)
+          request = Net::HTTP::Get.new uri.request_uri, request_options
+        elseif(type == :head)
+          request = Net::HTTP::Head.new uri.request_uri, request_options
+        end
+        
 
         response = @http.request request
         
@@ -248,147 +264,10 @@ class Cobweb
         content[:links] = {}
       end
     end
-    content  
-  end
-
-  # Performs a HTTP HEAD request to the specified url applying the options supplied
-  def head(url, options = @options)
-    raise "url cannot be nil" if url.nil?    
-    uri = Addressable::URI.parse(url)
-    uri.normalize!
-    uri.fragment=nil
-    url = uri.to_s
-
-    # get the unique id for this request
-    unique_id = Digest::SHA1.hexdigest(url)
-    if options.has_key?(:redirect_limit) and !options[:redirect_limit].nil?
-      redirect_limit = options[:redirect_limit].to_i
-    else
-      redirect_limit = 10
-    end
-    
-    # connect to redis
-    if options.has_key? :crawl_id
-      redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{options[:crawl_id]}", :redis => Redis.new(@options[:redis_options]))
-    else
-      redis = Redis::Namespace.new("cobweb-#{Cobweb.version}", :redis => Redis.new(@options[:redis_options]))
-    end
-    
-    content = {:base_url => url}
-    
-    # check if it has already been cached
-    if redis.get("head-#{unique_id}") and @options[:cache]
-      puts "Cache hit for #{url}" unless @options[:quiet]
-      content = HashUtil.deep_symbolize_keys(Marshal.load(redis.get("head-#{unique_id}")))
-    else
-      # retrieve data
-      unless @http && @http.address == uri.host && @http.port == uri.inferred_port
-        puts "Creating connection to #{uri.host}..." unless @options[:quiet]
-        @http = Net::HTTP.new(uri.host, uri.inferred_port)
-      end
-      if uri.scheme == "https"
-        @http.use_ssl = true
-        @http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      end
-      
-      request_time = Time.now.to_f
-      @http.read_timeout = @options[:timeout].to_i
-      @http.open_timeout = @options[:timeout].to_i
-      begin
-        print "Retrieving #{url }... " unless @options[:quiet]
-        request_options={}
-        if options[:cookies]
-          request_options[ 'Cookie']= options[:cookies]
-        end
-        request = Net::HTTP::Head.new uri.request_uri, request_options
-
-        response = @http.request request
-
-        if @options[:follow_redirects] and response.code.to_i >= 300 and response.code.to_i < 400
-          puts "redirected... " unless @options[:quiet]
-
-          uri = UriHelper.join_no_fragment(uri, response['location'])
-
-          redirect_limit = redirect_limit - 1
-
-          raise RedirectError, "Redirect Limit reached" if redirect_limit == 0
-          cookies = get_cookies(response)
-
-          content = head(uri, options.merge(:redirect_limit => redirect_limit, :cookies => cookies))
-          content[:url] = uri.to_s
-          content[:redirect_through] = [] if content[:redirect_through].nil?
-          content[:redirect_through].insert(0, url)
-        else
-          content[:url] = uri.to_s
-          content[:status_code] = response.code.to_i
-          unless response.content_type.nil?
-            content[:mime_type] = response.content_type.split(";")[0].strip
-            if response["Content-Type"].include? ";"
-              charset = response["Content-Type"][response["Content-Type"].index(";")+2..-1] if !response["Content-Type"].nil? and response["Content-Type"].include?(";")
-              charset = charset[charset.index("=")+1..-1] if charset and charset.include?("=")
-              content[:character_set] = charset
-            end
-          end 
-          
-          # add content to cache if required
-          if @options[:cache]
-            puts "Stored in cache [head-#{unique_id}]" if @options[:debug]
-            redis.set("head-#{unique_id}", Marshal.dump(content))
-            redis.expire "head-#{unique_id}", @options[:cache].to_i
-          else
-            puts "Not storing in cache as cache disabled" if @options[:debug]
-          end
-        end
-      rescue RedirectError => e
-        puts "ERROR RedirectError: #{e.message}"
-
-        ## generate a blank content
-        content = {}
-        content[:url] = uri.to_s
-        content[:response_time] = Time.now.to_f - request_time
-        content[:status_code] = 0
-        content[:length] = 0
-        content[:body] = ""
-        content[:error] = e.message
-        content[:mime_type] = "error/dnslookup"
-        content[:headers] = {}
-        content[:links] = {}
-
-      rescue SocketError => e
-        puts "ERROR SocketError: #{e.message}"
-        
-        ## generate a blank content
-        content = {}
-        content[:url] = uri.to_s
-        content[:response_time] = Time.now.to_f - request_time
-        content[:status_code] = 0
-        content[:length] = 0
-        content[:body] = ""
-        content[:error] = e.message
-        content[:mime_type] = "error/dnslookup"
-        content[:headers] = {}
-        content[:links] = {}
-      
-      rescue Timeout::Error => e
-        puts "ERROR Timeout::Error: #{e.message}"
-        
-        ## generate a blank content
-        content = {}
-        content[:url] = uri.to_s
-        content[:response_time] = Time.now.to_f - request_time
-        content[:status_code] = 0
-        content[:length] = 0
-        content[:body] = ""
-        content[:error] = e.message
-        content[:mime_type] = "error/serverdown"
-        content[:headers] = {}
-        content[:links] = {}
-      end
-      
-      content
-    end
+    content
     
   end
+  
   
   # escapes characters with meaning in regular expressions and adds wildcard expression
   def self.escape_pattern_for_regex(pattern)
