@@ -3,6 +3,10 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec/samples/sample_serve
 require 'mock_redis'
 require 'thin' if ENV["TRAVIS_RUBY_VERSION"].nil?
 
+# code coverage tooling support
+require 'simplecov'
+SimpleCov.start
+
 # Sets up the environment as test so that exceptions are raised
 ENVIRONMENT = "test"
 APP_ROOT = File.expand_path(File.dirname(__FILE__) + '/../')
