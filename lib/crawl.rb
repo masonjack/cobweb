@@ -217,25 +217,51 @@ module CobwebModule
       @redis
     end
 
+    # implement locking using redis locking primatives
     def lock(key, &block)
       debug_puts "REQUESTING LOCK [#{key}]"
-      set_nx = @redis.setnx("#{key}_lock", "locked")
+      set_nx = aquire_lock(key)
       debug_puts "LOCK:#{key}:#{set_nx}"
       while !set_nx
         debug_puts "===== WAITING FOR LOCK [#{key}] ====="
-        sleep 0.01
-        set_nx = @redis.setnx("#{key}_lock", "locked")
+
+        # deadlock detection
+        current_lock_val = @redis.get("#{key}_lock")
+        new_lock = (Time.now.to_f + 0.01 + 1)
+        
+        if new_lock > current_lock_val
+          sleep 0.01
+          set_nx = aquire_lock(key)
+        else
+          non_expired_lock = (Time.now.to_f + 0.01 + 1)
+          aquired = new_lock > @redis.getset("#{key}_lock", non_expired_lock)
+          
+          if !aquired
+            sleep 0.01
+            set_nx = aquire_lock(key)
+          end
+        end
+
       end
 
       debug_puts "RECEIVED LOCK [#{key}]"
       begin
         result = yield
       ensure
-        @redis.del("#{key}_lock")
-        debug_puts "LOCK RELEASED [#{key}]"
+        # check the lock didnt expire while we were working
+        current_lock_val = @redis.get("#{key}_lock")
+        if( (Time.now.to_f + 0.01 + 1) < current_lock_val)
+          @redis.del("#{key}_lock")
+          debug_puts "LOCK RELEASED [#{key}]"
+        end
       end
       result
     end
+
+    def aquire_lock(key)
+      @redis.setnx("#{key}_lock", (Time.now.to_f + 0.01 + 1))
+    end
+    
     
     def debug_ap(value)
       ap(value) if @options[:debug]
