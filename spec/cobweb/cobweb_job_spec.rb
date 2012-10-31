@@ -9,6 +9,7 @@ describe Cobweb, :local_only => true do
     # START WORKERS ONLY FOR CRAWL QUEUE SO WE CAN COUNT ENQUEUED PROCESS AND FINISH QUEUES
     puts "Starting Workers... Please Wait..."
     `mkdir log`
+    `mkdir tmp/pids`
     io = IO.popen("nohup rake resque:workers PIDFILE=./tmp/pids/resque.pid COUNT=10 QUEUE=cobweb_crawl_job > log/output.log &")
     puts "Workers Started."
 
@@ -143,19 +144,19 @@ describe Cobweb, :local_only => true do
       it "should not crawl the entire site" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
-        wait_for_crawl_finished crawl[:crawl_id]
+        wait_for_crawl_finished crawl[:crawl_id],30
         @redis.get("crawl_job_enqueued_count").to_i.should_not == @base_page_count
       end
       it "should only crawl 1 page" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
-        wait_for_crawl_finished crawl[:crawl_id]
+        wait_for_crawl_finished crawl[:crawl_id],30
         @redis.get("crawl_job_enqueued_count").to_i.should == 1
       end
       it "should notify of crawl finished once" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
-        wait_for_crawl_finished crawl[:crawl_id]
+        wait_for_crawl_finished crawl[:crawl_id],30
         @redis.get("crawl_finished_enqueued_count").to_i.should == 1
       end
     end
@@ -187,19 +188,19 @@ describe Cobweb, :local_only => true do
       it "should not crawl the entire site" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
-        wait_for_crawl_finished crawl[:crawl_id]
+        wait_for_crawl_finished crawl[:crawl_id],30
         @redis.get("crawl_job_enqueued_count").to_i.should_not == @base_page_count
       end
       it "should notify of crawl finished once" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
-        wait_for_crawl_finished crawl[:crawl_id]
+        wait_for_crawl_finished crawl[:crawl_id],30
         @redis.get("crawl_finished_enqueued_count").to_i.should == 1
       end
       it "should only crawl 10 objects" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
-        wait_for_crawl_finished crawl[:crawl_id]
+        wait_for_crawl_finished crawl[:crawl_id],30
         @redis.get("crawl_job_enqueued_count").to_i.should == 10
       end
     end
@@ -213,19 +214,19 @@ describe Cobweb, :local_only => true do
       it "should crawl the entire sample site" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
-        wait_for_crawl_finished crawl[:crawl_id]
+        wait_for_crawl_finished crawl[:crawl_id],30
         @redis.get("crawl_job_enqueued_count").to_i.should == @base_page_count
       end
       it "should notify of crawl finished once" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
-        wait_for_crawl_finished crawl[:crawl_id]
+        wait_for_crawl_finished crawl[:crawl_id],30
         @redis.get("crawl_finished_enqueued_count").to_i.should == 1
       end
       it "should not crawl 100 pages" do
         crawl = @cobweb.start(@base_url)
         @stat = Stats.new({:crawl_id => crawl[:crawl_id]})
-        wait_for_crawl_finished crawl[:crawl_id]
+        wait_for_crawl_finished crawl[:crawl_id],30
         @redis.get("crawl_job_enqueued_count").to_i.should_not == 100
       end
     end
@@ -247,6 +248,7 @@ def wait_for_crawl_finished(crawl_id, timeout=20)
   @counter = 0
   start_time = Time.now
   while(running?(crawl_id) && Time.now < start_time + timeout) do
+    puts("crawl #{crawl_id} is running and not complete")
     sleep 0.5
   end
   if Time.now > start_time + timeout
@@ -277,6 +279,8 @@ def running?(crawl_id)
     end
   end
   @last_stat = @stat.get_status
+  puts result
+  puts @last_stat
   result
 end
 

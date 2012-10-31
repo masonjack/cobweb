@@ -226,15 +226,15 @@ module CobwebModule
         debug_puts "===== WAITING FOR LOCK [#{key}] ====="
 
         # deadlock detection
-        current_lock_val = @redis.get("#{key}_lock")
-        new_lock = (Time.now.to_f + 0.01 + 1)
+        current_lock_val = @redis.get("#{key}_lock").to_i
+        new_lock = get_time
         
         if new_lock > current_lock_val
           sleep 0.01
           set_nx = aquire_lock(key)
         else
-          non_expired_lock = (Time.now.to_f + 0.01 + 1)
-          aquired = new_lock > @redis.getset("#{key}_lock", non_expired_lock)
+          non_expired_lock = get_time()
+          aquired = new_lock > @redis.getset("#{key}_lock", non_expired_lock).to_i
           
           if !aquired
             sleep 0.01
@@ -249,8 +249,8 @@ module CobwebModule
         result = yield
       ensure
         # check the lock didnt expire while we were working
-        current_lock_val = @redis.get("#{key}_lock")
-        if( (Time.now.to_f + 0.01 + 1) < current_lock_val)
+        current_lock_val = @redis.get("#{key}_lock").to_i
+        if( get_time < current_lock_val)
           @redis.del("#{key}_lock")
           debug_puts "LOCK RELEASED [#{key}]"
         end
@@ -258,8 +258,12 @@ module CobwebModule
       result
     end
 
+    def get_time
+      Time.now.to_f + 0.01 + 1
+    end
+    
     def aquire_lock(key)
-      @redis.setnx("#{key}_lock", (Time.now.to_f + 0.01 + 1))
+      @redis.setnx("#{key}_lock", get_time)
     end
     
     
