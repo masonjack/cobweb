@@ -18,7 +18,7 @@ DIRECTORIES = \
 
 .PHONY: clean rvm
 
-default: clean test
+default: clean rvm test
 
 ${DIRECTORIES}:
 	mkdir -p $@
