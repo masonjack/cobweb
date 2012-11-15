@@ -114,13 +114,6 @@ class Cobweb
     pattern
   end
   
-  private
-  # checks if the mime_type is textual
-  def text_content?(content_type)
-    @options[:text_mime_types].each do |mime_type|
-      return true if content_type.match(Cobweb.escape_pattern_for_regex(mime_type))
-    end
-    false
-  end
+  
   
 end

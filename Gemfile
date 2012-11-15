@@ -17,6 +17,8 @@ gem 'mock_redis'
 
 gem 'simplecov', :require => false, :group => :test
 
+gem 'typhoeus'
+
 if ENV["TRAVIS_RUBY_VERSION"].nil?
   gem 'thin'
 end

@@ -1,7 +1,9 @@
+require 'typhoeus'
+
 
 module CobwebRequest
   
-  def request(url, type, options)
+  def request(url, type, cache_manager, options)
 
     raise "url cannot be nil" if url.nil?
     uri = Addressable::URI.parse(url)
@@ -20,23 +22,17 @@ module CobwebRequest
       redirect_limit = 10
     end
     
-    # connect to redis
-    if options.has_key? :crawl_id
-      redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{options[:crawl_id]}", :redis => Redis.new(@options[:redis_options]))
-    else
-      redis = Redis::Namespace.new("cobweb-#{Cobweb.version}", :redis => Redis.new(@options[:redis_options]))
-    end
-
     content = {:base_url => url}
     
     # check if it has already been cached
-    if redis.get(unique_id) and @options[:cache]
-      puts "Cache hit for #{url}" unless @options[:quiet]
-      content = HashUtil.deep_symbolize_keys(Marshal.load(redis.get(unique_id)))
+    if cache_manager.in_cache?(unique_id)
+      puts "Cache hit for #{url}" unless options[:quiet]
+      content = cache_manager.get(unique_id)
+    
     else
       # retrieve data
       unless @http && @http.address == uri.host && @http.port == uri.inferred_port
-        puts "Creating connection to #{uri.host}..." if @options[:quiet]
+        puts "Creating connection to #{uri.host}..." if options[:quiet]
         @http = Net::HTTP.new(uri.host, uri.inferred_port)
       end
       if uri.scheme == "https"
@@ -45,10 +41,10 @@ module CobwebRequest
       end
       
       request_time = Time.now.to_f
-      @http.read_timeout = @options[:timeout].to_i
-      @http.open_timeout = @options[:timeout].to_i
+      @http.read_timeout = options[:timeout].to_i
+      @http.open_timeout = options[:timeout].to_i
       begin
-        print "Retrieving #{url }... " unless @options[:quiet]
+        print "Retrieving #{url }... " unless options[:quiet]
         request_options={}
         if options[:cookies]
           request_options[ 'Cookie']= options[:cookies]
@@ -60,8 +56,8 @@ module CobwebRequest
         
         response = @http.request request
         
-        if @options[:follow_redirects] and response.code.to_i >= 300 and response.code.to_i < 400
-          puts "redirected... " unless @options[:quiet]
+        if options[:follow_redirects] and response.code.to_i >= 300 and response.code.to_i < 400
+          puts "redirected... " unless options[:quiet]
           
           # get location to redirect to
           uri = UriHelper.join_no_fragment(uri, response['location'])
@@ -82,7 +78,7 @@ module CobwebRequest
         else
           content[:response_time] = Time.now.to_f - request_time
           
-          puts "Retrieved." unless @options[:quiet]
+          puts "Retrieved." unless options[:quiet]
 
           # create the content container
           content[:url] = uri.to_s
@@ -96,16 +92,16 @@ module CobwebRequest
               content[:character_set] = charset
             end
 
-            content.merge! body_processing(response, content) if type == :get
+            content.merge! body_processing(response, content, options) if type == :get
           end
 
         end
+        
         # add content to cache if required
-        if @options[:cache]
-          redis.set(unique_id, Marshal.dump(content))
-          redis.expire unique_id, @options[:cache].to_i
+        if options[:cache]
+          cache_manager.set(unique_id, content)
         else
-          puts "Not storing in cache as cache disabled" if @options[:debug]
+          puts "Not storing in cache as cache disabled" if options[:debug]
         end
         
       rescue RedirectError => e
@@ -158,11 +154,11 @@ module CobwebRequest
     
   end
 
-  def get(url, options = @options)
+  def get(url, options = nil)
   end
 
 
-  def head(url, options = @options)
+  def head(url, options = nil)
   end
 
   def head_processing(content, options)
@@ -172,8 +168,8 @@ module CobwebRequest
   def body_processing(response, existing_content, options=nil)
     content = {}
     content[:length] = response.content_length
-    content[:text_content] = text_content?(existing_content[:mime_type])
-    if text_content?(existing_content[:mime_type])
+    content[:text_content] = text_content?(existing_content[:mime_type], options)
+    if text_content?(existing_content[:mime_type], options)
       if response["Content-Encoding"]=="gzip"
         content[:body] = Zlib::GzipReader.new(StringIO.new(response.body)).read
       else
@@ -192,4 +188,12 @@ module CobwebRequest
     content
   end
 
+
+  def text_content?(content_type, options)
+    options[:text_mime_types].each do |mime_type|
+      return true if content_type.match(Cobweb.escape_pattern_for_regex(mime_type))
+    end
+    false
+  end
+  
 end
