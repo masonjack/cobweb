@@ -64,6 +64,16 @@ describe Cobweb do
     
   end
 
+  describe "head requests " do
+
+    it "should return valid head data for a head request" do
+      content = @requester.request("http://www.google.com.au", :head, DummyCache.new, @default_opts)
+      content[:url].should eql "http://www.google.com.au/"
+      content[:mime_type].should eql "text/html"
+    end
+    
+  end
+  
 
   #descr
 

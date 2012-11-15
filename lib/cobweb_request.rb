@@ -43,6 +43,7 @@ module CobwebRequest
       request_time = Time.now.to_f
       @http.read_timeout = options[:timeout].to_i
       @http.open_timeout = options[:timeout].to_i
+      
       begin
         print "Retrieving #{url }... " unless options[:quiet]
         request_options={}

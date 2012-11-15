@@ -21,9 +21,9 @@ class RedisCacheManager
 
   def initialize(options = {} )
     if options.has_key? :crawl_id
-      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{options[:crawl_id]}", :redis => Redis.new(@options[:redis_options]))
+      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{options[:crawl_id]}", :redis => Redis.new(options[:redis_options]))
     else
-      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}", :redis => Redis.new(@options[:redis_options]))
+      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}", :redis => Redis.new(options[:redis_options]))
     end
   end
 
