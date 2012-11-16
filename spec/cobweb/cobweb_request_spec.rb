@@ -59,7 +59,7 @@ describe Cobweb do
 
     it "should return real data" do
       content = @requester.request("http://www.google.com.au", :get, DummyCache.new, @default_opts )
-      content[:body].should =~ /asdf/ 
+      content[:body].should =~ /.*body.*/ 
     end
     
   end

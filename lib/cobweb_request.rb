@@ -23,6 +23,7 @@ module CobwebRequest
     end
     
     content = {:base_url => url}
+    http_opts = {}
     
     # check if it has already been cached
     if cache_manager.in_cache?(unique_id)
@@ -31,31 +32,29 @@ module CobwebRequest
     
     else
       # retrieve data
-      unless @http && @http.address == uri.host && @http.port == uri.inferred_port
-        puts "Creating connection to #{uri.host}..." if options[:quiet]
-        @http = Net::HTTP.new(uri.host, uri.inferred_port)
-      end
       if uri.scheme == "https"
-        @http.use_ssl = true
-        @http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        http_opts[:ssl_verifypeer] = false
       end
+
+      http_opts[:timeout] = options[:timeout].to_i
+      http_opts[:connecttimeout] = options[:timeout].to_i
       
       request_time = Time.now.to_f
-      @http.read_timeout = options[:timeout].to_i
-      @http.open_timeout = options[:timeout].to_i
       
       begin
         print "Retrieving #{url }... " unless options[:quiet]
-        request_options={}
-        if options[:cookies]
-          request_options[ 'Cookie']= options[:cookies]
+        
+        
+        #if options[:cookies]
+        #  request_options[ 'Cookie']= options[:cookies]
+        #end
+
+        if type == :get
+          response = Typhoeus::Request.get("#{uri.host}:#{uri.inferred_port}", http_opts)
+        elsif type == :head
+          response = Typhoeus::Request.head("#{uri.host}:#{uri.inferred_port}", http_opts)
         end
         
-        requester = Net::HTTP::Get if type == :get
-        requester = Net::HTTP::Head if type == :head
-        request = requester.new uri.request_uri, request_options
-        
-        response = @http.request request
         
         if options[:follow_redirects] and response.code.to_i >= 300 and response.code.to_i < 400
           puts "redirected... " unless options[:quiet]
@@ -85,10 +84,12 @@ module CobwebRequest
           content[:url] = uri.to_s
           content[:status_code] = response.code.to_i
           content[:mime_type] = ""
-          unless response.content_type.nil?
-            content[:mime_type] = response.content_type.split(";")[0].strip 
-            if response["Content-Type"].include?(";")
-              charset = response["Content-Type"][response["Content-Type"].index(";")+2..-1] if !response["Content-Type"].nil? and response["Content-Type"].include?(";")
+          unless response.headers["content-type"].nil?
+            content[:mime_type] = response.headers["content-type"].split(";")[0].strip
+            ct = response.headers["content-type"]
+            
+            if ct.include?(";")
+              charset = ct[ct.index(";")+2..-1] if !ct.nil? and ct.include?(";")
               charset = charset[charset.index("=")+1..-1] if charset and charset.include?("=")
               content[:character_set] = charset
             end
@@ -168,10 +169,10 @@ module CobwebRequest
 
   def body_processing(response, existing_content, options=nil)
     content = {}
-    content[:length] = response.content_length
+    content[:length] = response.headers["Content-Length"]
     content[:text_content] = text_content?(existing_content[:mime_type], options)
     if text_content?(existing_content[:mime_type], options)
-      if response["Content-Encoding"]=="gzip"
+      if response.headers["Content-Encoding"]=="gzip"
         content[:body] = Zlib::GzipReader.new(StringIO.new(response.body)).read
       else
         content[:body] = response.body
@@ -180,8 +181,8 @@ module CobwebRequest
       content[:body] = Base64.encode64(response.body)
     end
 
-    content[:location] = response["location"]
-    content[:headers] = HashUtil.deep_symbolize_keys(response.to_hash)
+    content[:location] = response.headers["location"]
+    content[:headers] = HashUtil.deep_symbolize_keys(response.headers)
     # parse data for links
     link_parser = ContentLinkParser.new(content[:url], content[:body])
     content[:links] = link_parser.link_data
