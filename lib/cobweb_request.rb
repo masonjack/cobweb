@@ -50,17 +50,18 @@ module CobwebRequest
         #end
 
         if type == :get
-          response = Typhoeus::Request.get("#{uri.host}:#{uri.inferred_port}", http_opts)
+          response = Typhoeus::Request.get(url, http_opts)
         elsif type == :head
-          response = Typhoeus::Request.head("#{uri.host}:#{uri.inferred_port}", http_opts)
+          response = Typhoeus::Request.head(url, http_opts)
         end
         
+        puts "response has status code of :#{response.code} - follow_redirects = #{options[:follow_redirects]} on url #{url}"
         
         if options[:follow_redirects] and response.code.to_i >= 300 and response.code.to_i < 400
           puts "redirected... " unless options[:quiet]
           
           # get location to redirect to
-          uri = UriHelper.join_no_fragment(uri, response['location'])
+          uri = UriHelper.join_no_fragment(uri, response.headers["location"])
           
           # decrement redirect limit
           redirect_limit = redirect_limit - 1
@@ -182,6 +183,7 @@ module CobwebRequest
     end
 
     content[:location] = response.headers["location"]
+         
     content[:headers] = HashUtil.deep_symbolize_keys(response.headers)
     # parse data for links
     link_parser = ContentLinkParser.new(content[:url], content[:body])

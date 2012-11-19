@@ -48,7 +48,7 @@ class Cobweb
     default_obey_robots_to                    false
     default_user_agent_to                     "cobweb/#{Cobweb.version} (ruby/#{RUBY_VERSION} nokogiri/#{Nokogiri::VERSION})"
     default_valid_mime_types_to                ["*/*"]
-    
+    default_cache_manager_to                   RedisCacheManager.new(options)
   end
   
   # This method starts the resque based crawl and enqueues the base_url
@@ -96,12 +96,12 @@ class Cobweb
 
   # Performs a HTTP GET request to the specified url applying the options supplied
   def get(url, options = @options)
-    request(url, :get, options)
+    request(url, :get, options[:cache_manager], options)
   end
 
   # Performs a HTTP HEAD request to the specified url applying the options supplied
   def head(url, options = @options)
-    request(url, :head, options)
+    request(url, :head, options[:cache_manager], options)
   end
 
 

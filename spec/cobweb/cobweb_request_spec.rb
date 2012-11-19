@@ -4,18 +4,6 @@ class Requester
   include CobwebRequest
 end
 
-class DummyCache
-  include CacheManager
-  def get(key)
-    nil
-  end
-  def set(key,value)
-  end
-  def in_cache?(key)
-    false
-  end
-end
-
 
 describe Cobweb do
 
