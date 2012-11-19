@@ -55,8 +55,6 @@ module CobwebRequest
           response = Typhoeus::Request.head(url, http_opts)
         end
         
-        puts "response has status code of :#{response.code} - follow_redirects = #{options[:follow_redirects]} on url #{url}"
-        
         if options[:follow_redirects] and response.code.to_i >= 300 and response.code.to_i < 400
           puts "redirected... " unless options[:quiet]
           
