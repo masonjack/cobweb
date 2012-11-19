@@ -20,24 +20,25 @@ class RedisCacheManager
   include CacheManager
 
   def initialize(options = {} )
+    @timeout = options[:cache]
     if options.has_key? :crawl_id
-      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{options[:crawl_id]}", :redis => Redis.new(options[:redis_options]))
+      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{options[:crawl_id]}", :redis => Redis.new(options))
     else
-      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}", :redis => Redis.new(options[:redis_options]))
+      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}", :redis => Redis.new(options))
     end
   end
 
   def store(key, data)
-    @redis.set(key, Marshal.dump(content))
-    @redis.expire key, @options[:cache].to_i
+    @redis.set(key, Marshal.dump(data))
+    @redis.expire key, @timeout.to_i
   end
 
   def get(key)
-    HashUtil.deep_symbolize_keys(Marshal.load(@redis.get(unique_id)))
+    HashUtil.deep_symbolize_keys(Marshal.load(@redis.get(key)))
   end
 
   def in_cache?(key)
-    return true if redis.get(key)
+    return true if @redis.get(key)
     false
   end
   
