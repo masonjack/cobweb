@@ -167,9 +167,13 @@ module CobwebRequest
   end
 
   def body_processing(response, existing_content, options=nil)
+
+    puts "BODY PROCESSING!"
+    
     content = {}
     content[:length] = response.headers["Content-Length"]
     content[:text_content] = text_content?(existing_content[:mime_type], options)
+    
     if text_content?(existing_content[:mime_type], options)
       if response.headers["Content-Encoding"]=="gzip"
         content[:body] = Zlib::GzipReader.new(StringIO.new(response.body)).read

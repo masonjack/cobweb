@@ -1,4 +1,5 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require File.expand_path(File.dirname(__FILE__) + '/../mocks_setup')
 
 # Tests the internals using the external API
 describe Cobweb do
