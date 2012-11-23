@@ -29,7 +29,8 @@
         
         @base_crawled=true
 
-        if within_crawl_limits?
+        
+        if within_crawl_limits? && dig?
           retrieve(@urls[count+1])
         end
         
@@ -53,6 +54,15 @@
     end
 
 
+    def dig?
+      if options[:depth]
+        return true if @options[:depth] > 0
+      else
+        return true #if not specified we will dig into links
+      end
+      false
+    end
+    
     def process_links(content, &block)
 
       # set the base url if this is the first page
@@ -88,9 +98,8 @@
     end
 
 
-    private
-
     def within_crawl_limits?
+      
       return (@urls.size < @options[:crawl_limit])
     end
     
