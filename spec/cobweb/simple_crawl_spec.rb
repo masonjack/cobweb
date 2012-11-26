@@ -16,7 +16,6 @@ describe SimpleCrawl do
     
   end
   
-  
   it "should collect all urls from a page" do
     @options[:depth] = 0
     crawl = SimpleCrawl.new(@options)
@@ -28,6 +27,29 @@ describe SimpleCrawl do
     crawl = SimpleCrawl.new(@options)
     crawl.retrieve.should be_true
     crawl.urls.size.should eql 100
+  end
+
+  it "should return a unique list of urls with no duplicates" do
+    crawl = SimpleCrawl.new(@options)
+    crawl.retrieve.should be_true
+    crawl.urls.size.should eql 100
+
+    puts "--------"
+    puts crawl.urls
+    puts "--------"
+    
+    check_urls = []
+    counter = 1
+    crawl.urls.each do |u|
+      counter += 1
+      puts "adding #{u}"
+      if check_urls.include? u        
+        fail "duplicate found at #{check_urls.index(u)} - count #{counter}" 
+      end
+      
+      check_urls << u
+    end
+    
   end
   
   
