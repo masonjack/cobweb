@@ -13,7 +13,12 @@ class UrlProcessingJob
     content_to_send = content_options.merge(content)
 
     clazz = const_get(content_options[:url_processor])
-    clazz.perform(content_to_send)
+    if(clazz.respond_to? :perform)
+      clazz.perform(content_to_send)
+    else
+      raise "Supplied url_processor class does not respond to perform method"
+    end
+    
     
   end
   
