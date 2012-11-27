@@ -23,7 +23,7 @@ class SpiderJob
       queued << Resque.enqueue(processing_clazz, content_request)
     end
 
-    queued.any?
+    queued.all?
   end
   
 end
