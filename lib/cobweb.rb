@@ -35,8 +35,8 @@ class Cobweb
     default_use_encoding_safe_process_job_to  false
     default_follow_redirects_to               true
     default_redirect_limit_to                 10
-    default_processing_queue_to               "CobwebProcessJob"
-    default_crawl_finished_queue_to           "CobwebFinishedJob"
+    default_processing_queue_to               "SpiderJob"
+    default_crawl_finished_queue_to           "UrlProcessingJob"
     default_quiet_to                          true
     default_debug_to                          false
     default_cache_to                          300
@@ -67,18 +67,8 @@ class Cobweb
     end
     
     request.merge!(@options)
-    @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{request[:crawl_id]}", :redis => Redis.new(request[:redis_options]))
-    @redis.set("original_base_url", base_url)
-    @redis.hset "statistics", "queued_at", DateTime.now
-    @redis.set("crawl-counter", 0)
-    @redis.set("queue-counter", 1)
     
-    @stats = Stats.new(request)
-    @stats.start_crawl(request)
-    
-    # add internal_urls into redis
-    @options[:internal_urls].map{|url| @redis.sadd("internal_urls", url)}
-    Resque.enqueue(CrawlJob, request)
+    Resque.enqueue(SpiderJob, request)
     request
   end
   

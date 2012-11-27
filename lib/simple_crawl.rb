@@ -15,7 +15,7 @@
     end
 
     def retrieve(url=nil,count=0)
-      puts "counter #{count}"
+
       url = @options[:url] unless url
       @urls << url unless @urls.include? url
       
@@ -38,8 +38,6 @@
         return true if content.permitted_type?
         
       end
-      
-
       
       return false
     end

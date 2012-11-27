@@ -9,18 +9,24 @@ describe SpiderJob do
       :crawl_limit_by_page => false,
       :crawl_limit => 100,
       :cache_manager => DummyCache.new,
-      :processing_queue => "SpiderJob"
+      :processing_queue => "UrlProcessingJob"
     }
     @options[:internal_urls] = []
     uri = Addressable::URI.parse(@options[:url])
     @options[:internal_urls] << [uri.scheme, "://", uri.host, ":", uri.inferred_port, "/*"].join
-
+    
   end
   
 
-  describe "Performing a spider job enqueus urls into Resqueue" do
-    Resque.should_recieve(:enqueue).exactly(100).times
-    SpiderJob.perform(@options)
+  describe "Performing a spider job enqueus urls into Resque" do
+    before(:each) do
+      Resque.stub!(:enqueue).and_return(true)
+
+    end
+    
+    it "should queue the items into Resque" do
+      SpiderJob.perform(@options).should == true
+    end
     
   end
   
