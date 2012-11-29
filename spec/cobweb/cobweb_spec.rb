@@ -20,7 +20,7 @@ describe Cobweb do
     
     options[:follow_redirects].should == true
     options[:redirect_limit].should == 10
-    options[:processing_queue].should == "CobwebProcessJob"
+    options[:processing_queue].should == "SpiderJob"
     options[:crawl_finished_queue].should == "CobwebFinishedJob"
     options[:quiet].should == true
     options[:debug].should == false

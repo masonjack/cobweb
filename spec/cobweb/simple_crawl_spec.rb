@@ -8,7 +8,7 @@ describe SimpleCrawl do
       :url => "http://localhost:3532/",
       :crawl_limit_by_page => false,
       :crawl_limit => 100,
-      :cache_manager => DummyCache.new,
+      :cache_manager => "DummyCache"
     }
     @options[:internal_urls] = []
     uri = Addressable::URI.parse(@options[:url])

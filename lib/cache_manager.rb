@@ -1,6 +1,10 @@
 
 module CacheManager
 
+  def initialize(options)
+    raise "must implement initialize method on the CacheManager instance that accepts a single parameter"
+  end
+  
   def store(key, value)
     raise "Not implemented"
   end
@@ -20,7 +24,7 @@ class RedisCacheManager
   include CacheManager
 
   def initialize(options = {} )
-    @timeout = options[:cache]
+    @timeout = options[:cache] || 300
     if options.has_key? :crawl_id
       @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{options[:crawl_id]}", :redis => Redis.new(options))
     else

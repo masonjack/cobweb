@@ -35,8 +35,9 @@ class Cobweb
     default_use_encoding_safe_process_job_to  false
     default_follow_redirects_to               true
     default_redirect_limit_to                 10
-    default_processing_queue_to               "SpiderJob"
+    default_processing_queue_to               "UrlProcessingJob"
     default_crawl_finished_queue_to           "CobwebFinishedJob"
+    default_url_processor_to                  "CobwebNullUrlProcessor"
     default_quiet_to                          true
     default_debug_to                          false
     default_cache_to                          300
@@ -48,7 +49,12 @@ class Cobweb
     default_obey_robots_to                    false
     default_user_agent_to                     "cobweb/#{Cobweb.version} (ruby/#{RUBY_VERSION} nokogiri/#{Nokogiri::VERSION})"
     default_valid_mime_types_to                ["*/*"]
-    default_cache_manager_to                   RedisCacheManager.new(options)
+    default_cache_manager_to                   "RedisCacheManager"
+    default_crawl_limit_to                     100
+
+    puts @options
+    @cache_manager = instanciate(@options[:cache_manager], @options)
+    
   end
   
   # This method starts the resque based crawl and enqueues the base_url
@@ -86,15 +92,15 @@ class Cobweb
 
   # Performs a HTTP GET request to the specified url applying the options supplied
   def get(url, options = @options)
-    request(url, :get, options[:cache_manager], options)
+    request(url, :get, @cache_manager, options)
   end
 
   # Performs a HTTP HEAD request to the specified url applying the options supplied
   def head(url, options = @options)
-    request(url, :head, options[:cache_manager], options)
+    request(url, :head, @cache_manager, options)
   end
 
-
+  
   # escapes characters with meaning in regular expressions and adds wildcard expression
   def self.escape_pattern_for_regex(pattern)
     pattern = pattern.gsub(".", "\\.")
@@ -103,7 +109,14 @@ class Cobweb
     pattern = pattern.gsub("*", ".*?")
     pattern
   end
-  
+
+  private
+
+  def instanciate(object_name, args)
+    klass = Object::const_get(object_name)
+    klass.new(args)
+  end
+
   
   
 end

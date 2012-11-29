@@ -19,7 +19,7 @@ class SpiderJob
     processing_clazz = const_get(content_request[:processing_queue])
     queued = []
     urls.each do |url|
-      content_request[:retrive_url] = url
+      content_request[:retrieve_url] = url
       queued << Resque.enqueue(processing_clazz, content_request)
     end
 

@@ -168,7 +168,7 @@ module CobwebRequest
 
   def body_processing(response, existing_content, options=nil)
 
-    puts "BODY PROCESSING!"
+    puts "BODY PROCESSING!" if options[:debug]
     
     content = {}
     content[:length] = response.headers["Content-Length"]

@@ -11,7 +11,7 @@
       @counter = 0
       @base_crawled=false
       @urls = []
-      @options = setup_defaults(HashUtil.deep_symbolize_keys(options))
+      @options = setup_defaults(HashUtil.deep_symbolize_keys(options))      
     end
 
     def retrieve(url=nil,count=0)
@@ -48,6 +48,10 @@
     def setup_defaults(options)
       options[:crawl_limit_by_page] = false unless options.has_key? :crawl_limit_by_page
       options[:valid_mime_types] = ["*/*"] unless options.has_key? :valid_mime_types
+      
+      cache = Object::const_get(options[:cache_manager])
+      options[:cache_instance] = cache.new(options)
+      
       options
     end
 
@@ -97,8 +101,10 @@
 
 
     def within_crawl_limits?
-      
-      return (@urls.size < @options[:crawl_limit])
+      if(@options[:crawl_limit])
+        return @urls.size < @options[:crawl_limit]
+      end
+      true
     end
     
     

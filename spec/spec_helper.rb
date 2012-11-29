@@ -34,6 +34,9 @@ end
 
 class DummyCache
   include CacheManager
+  def initialize(opts)
+  end
+  
   def get(key)
     nil
   end
@@ -48,7 +51,7 @@ class SimpleHashCache
   include CacheManager
   attr_accessor :cache
   
-  def initialize
+  def initialize(opts)
     @cache = Hash.new
   end
   
