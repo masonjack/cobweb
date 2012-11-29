@@ -149,6 +149,8 @@ module CobwebRequest
         content[:mime_type] = "error/serverdown"
         content[:headers] = {}
         content[:links] = {}
+      ensure
+        cache_manager.close_connection
       end
     end
     content  

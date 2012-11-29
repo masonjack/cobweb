@@ -16,6 +16,10 @@ module CacheManager
   def in_cache?(key)
     raise "Not implemented"    
   end
+
+  def close_connection
+    raise "Not implemented"
+  end
   
 end
 
@@ -44,6 +48,10 @@ class RedisCacheManager
   def in_cache?(key)
     return true if @redis.get(key)
     false
+  end
+
+  def close_connection
+    @redis.quit
   end
   
 end
