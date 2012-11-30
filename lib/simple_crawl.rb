@@ -31,9 +31,11 @@
         
         @base_crawled=true
         
-        if within_crawl_limits? && dig?
+        if within_crawl_limits? && dig? 
           new_count = count+1
-          retrieve(@urls[new_count], new_count)
+          uri = @urls[new_count]
+          status = retrieve(uri, new_count) unless @crawled.include?(uri)
+          @crawled << uri if status
         end
         
         return true if content.permitted_type?
@@ -99,7 +101,7 @@
 
 
     def within_crawl_limits?
-      if(@options[:crawl_limit])
+      if(@options[:crawl_limit]) 
         return @urls.size < @options[:crawl_limit]
       end
       true
