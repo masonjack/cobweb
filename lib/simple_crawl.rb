@@ -11,6 +11,7 @@
       @counter = 0
       @base_crawled=false
       @urls = []
+      @crawled = []
       @options = setup_defaults(HashUtil.deep_symbolize_keys(options))      
     end
 
@@ -48,9 +49,6 @@
     def setup_defaults(options)
       options[:crawl_limit_by_page] = false unless options.has_key? :crawl_limit_by_page
       options[:valid_mime_types] = ["*/*"] unless options.has_key? :valid_mime_types
-      
-      cache = Object::const_get(options[:cache_manager])
-      options[:cache_instance] = cache.new(options)
       
       options
     end

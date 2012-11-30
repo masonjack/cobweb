@@ -80,7 +80,7 @@ class Cobweb
   
   # Returns array of cookies from content
   def get_cookies(response)
-    all_cookies = response.get_fields('set-cookie')
+    all_cookies = response.response_headers["set-cookie"]
     unless all_cookies.nil?
       cookies_array = Array.new
       all_cookies.each { |cookie|
