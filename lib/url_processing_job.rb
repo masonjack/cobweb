@@ -15,11 +15,11 @@ class UrlProcessingJob
     content = processor.get( url, options)
     content_to_send = content_options.merge(content)
 
-    start_processor(options[:url_processor])
+    start_processor(options[:url_processor], content_to_send)
 
     if(content_options[:additional_url_processors])
       content_options[:additional_url_processors].each do |processor|
-        start_processor(processor)
+        start_processor(processor, content_to_send)
       end
     end
     
@@ -32,11 +32,11 @@ class UrlProcessingJob
   end
 
 
-  def self.start_processor(klass_name)
-    clazz = const_get()
+  def self.start_processor(klass_name, content)
+    clazz = const_get(klass_name, content)
     
     if(clazz.respond_to? :perform)
-      clazz.perform(content_to_send)
+      clazz.perform(content)
     else
       raise "Supplied url_processor class does not respond to perform method"
     end
