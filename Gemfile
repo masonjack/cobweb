@@ -14,6 +14,7 @@ gem 'redis-namespace'
 gem 'rspec'
 gem 'rspec-core'
 gem 'mock_redis'
+gem 'aws-s3'
 
 gem 'simplecov', :require => false, :group => :test
 
