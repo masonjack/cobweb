@@ -18,7 +18,7 @@ gem 'aws-s3'
 
 gem 'simplecov', :require => false, :group => :test
 
-gem 'typhoeus'
+gem 'typhoeus', ">= 0.5.1"
 
 if ENV["TRAVIS_RUBY_VERSION"].nil?
   gem 'thin'

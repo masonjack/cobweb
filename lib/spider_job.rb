@@ -16,7 +16,7 @@ class SpiderJob
   end
 
   def self.enqueue_urls(urls, content_request)
-    processing_clazz = const_get(content_request[:processing_queue])
+    processing_clazz = Object::const_get(content_request[:processing_queue])
     queued = []
     urls.each do |url|
       content_request[:retrieve_url] = url

@@ -26,7 +26,8 @@ class UrlProcessingJob
     # check if there is any other items on the queue,
     # if there is not, we are done!
     if(Resque.size(@queue) == 0)
-      Resque.enqueue(content_options[:crawl_finished_queue], content_options)
+      clazz = const_get(content_options[:crawl_finished_queue])
+      Resque.enqueue(clazz, content_options)
     end
     
   end
@@ -40,6 +41,24 @@ class UrlProcessingJob
     else
       raise "Supplied url_processor class does not respond to perform method"
     end
+  end
+
+
+  def self.currently_running
+    Resque::Worker.working.map(&:job).map(&:payload)
+  end
+
+  def self.queued_jobs
+    payloads = []
+    index = 0;
+    while (payload = Resque.redis.lindex("queue:#{@queue}", index)) do
+      payloads << payload
+    end
+    payloads
+  end
+
+  def in_progress?
+    
   end
   
 end

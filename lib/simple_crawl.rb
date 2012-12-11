@@ -16,7 +16,8 @@
     end
 
     def retrieve(url=nil,count=0)
-
+      puts " retrieve: count: #{count}"
+      
       url = @options[:url] unless url
       @urls << url unless @urls.include? url
       
@@ -34,8 +35,9 @@
         if within_crawl_limits? && dig? 
           new_count = count+1
           uri = @urls[new_count]
+          @crawled << uri
           status = retrieve(uri, new_count) unless @crawled.include?(uri)
-          @crawled << uri if status
+          
         end
         
         return true if content.permitted_type?
@@ -75,25 +77,30 @@
       # check command queue for info as to what the next step is
       
       if within_crawl_limits?
-        internal_links = ContentLinkParser.new(@options[:url], content.body, @options).all_links(:valid_schemes => [:http, :https])
-        #get rid of duplicate links in the same page.
-        #internal_links.each {|l| puts "link found :#{l}" }
+        begin
+          internal_links = ContentLinkParser.new(@options[:url], content.body, @options).all_links(:valid_schemes => [:http, :https])
+          #get rid of duplicate links in the same page.
+          #internal_links.each {|l| puts "link found :#{l}" }
+          
+          internal_links.uniq!
+          # select the link if its internal
+          internal_links.select! { |link| @cobweb_links.internal?(link) }
+          count = 0
+          count = internal_links.inject {|memo, l| count += 1  }
+          puts ("count found #{count}")
+          
+          # reject the link if we've already queued it
+          internal_links.reject! { |link| @urls.include? link }
         
-        internal_links.uniq!
-        # select the link if its internal
-        internal_links.select! { |link| @cobweb_links.internal?(link) }
-        count = 0
-        count = internal_links.inject {|memo, l| count += 1  }
-        puts ("count found #{count}")
-        
-        # reject the link if we've already queued it
-        internal_links.reject! { |link| @urls.include? link }
-        
-        internal_links.each do |link|
+          internal_links.each do |link|
 
-          yield link if block_given?
-          @urls << link if within_crawl_limits? 
+            yield link if block_given?
+            @urls << link if within_crawl_limits? 
+          end
+        rescue NoMethodError => e
+          puts "no body for this content"
         end
+        
       end
       
 

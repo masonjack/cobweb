@@ -1,5 +1,5 @@
 
-module CacheManager
+module CobwebCacheManager
 
   def initialize(options)
     raise "must implement initialize method on the CacheManager instance that accepts a single parameter"
@@ -25,7 +25,7 @@ end
 
 
 class RedisCacheManager
-  include CacheManager
+  include CobwebCacheManager
 
   def initialize(options = {} )
     @timeout = options[:cache] || 300
@@ -55,3 +55,24 @@ class RedisCacheManager
   end
   
 end
+
+
+
+class DummyCache
+  include CobwebCacheManager
+  def initialize(opts)
+  end
+
+  def close_connection
+  end
+  
+  def get(key)
+    nil
+  end
+  def set(key,value)
+  end
+  def in_cache?(key)
+    false
+  end
+end
+

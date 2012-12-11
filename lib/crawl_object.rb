@@ -17,6 +17,7 @@ module CobwebModule
     
     def method_missing(m)
       if @content.keys.include? m.to_sym
+        puts @content
         @content[m.to_sym]
       else
         super

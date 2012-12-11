@@ -50,7 +50,7 @@ class Cobweb
     default_obey_robots_to                    false
     default_user_agent_to                     "cobweb/#{Cobweb.version} (ruby/#{RUBY_VERSION} nokogiri/#{Nokogiri::VERSION})"
     default_valid_mime_types_to                ["*/*"]
-    default_cache_manager_to                   "RedisCacheManager"
+    default_cache_manager_to                   "DummyCache"
     default_crawl_limit_to                     100
 
     puts @options
@@ -81,7 +81,7 @@ class Cobweb
   
   # Returns array of cookies from content
   def get_cookies(response)
-    all_cookies = response.response_headers["set-cookie"]
+    all_cookies = response.headers["Set-Cookie"] || response.headers["set-cookie"]
     unless all_cookies.nil?
       cookies_array = Array.new
       all_cookies.each { |cookie|

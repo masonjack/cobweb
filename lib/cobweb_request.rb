@@ -38,45 +38,52 @@ module CobwebRequest
 
       http_opts[:timeout] = options[:timeout].to_i
       http_opts[:connecttimeout] = options[:timeout].to_i
-      
+      http_opts[:followlocation] = true if options[:follow_redirects]
+      http_opts[:maxredirs] = redirect_limit
+        
       request_time = Time.now.to_f
       
       begin
         print "Retrieving #{url }... " unless options[:quiet]
-        
+
+        puts("options: #{http_opts}")
         
         #if options[:cookies]
         #  request_options[ 'Cookie']= options[:cookies]
         #end
 
         if type == :get
-          response = Typhoeus::Request.get(url, http_opts)
+          response = Typhoeus::Request.new(url, http_opts).run
         elsif type == :head
           response = Typhoeus::Request.head(url, http_opts)
         end
         
-        if options[:follow_redirects] and response.code.to_i >= 300 and response.code.to_i < 400
-          puts "redirected... " unless options[:quiet]
+        # if options[:follow_redirects] and response.code.to_i >= 300 and response.code.to_i < 400
+        #   puts "redirected... " unless options[:quiet]
           
-          # get location to redirect to
-          uri = UriHelper.join_no_fragment(uri, response.headers["location"])
+        #   # get location to redirect to
+        #   puts "response - headers #{response.headers}"
+        #   location = response.headers["location"] || response.headers["Location"]
+        #   puts "redirecting to : #{location}, limit == #{redirect_limit}"
+        #   uri = UriHelper.join_no_fragment(uri, location)
           
-          # decrement redirect limit
-          redirect_limit = redirect_limit - 1
+        #   # decrement redirect limit
+        #   redirect_limit = redirect_limit - 1
 
-          raise RedirectError, "Redirect Limit reached" if redirect_limit == 0
-          cookies = get_cookies(response)
+        #   raise RedirectError, "Redirect Limit reached" if redirect_limit == 0
+        #   cookies = get_cookies(response)
 
-          # get the content from redirect location
-          content = request(uri,type, cache_manager, options.merge(:redirect_limit => redirect_limit, :cookies => cookies))
-          content[:url] = uri.to_s
-          content[:redirect_through] = [] if content[:redirect_through].nil?
-          content[:redirect_through].insert(0, url)
+        #   # get the content from redirect location
+        #   content = request(uri,type, cache_manager, options.merge(:redirect_limit => redirect_limit, :cookies => cookies))
+        #   content[:url] = uri.to_s
+        #   content[:redirect_through] = [] if content[:redirect_through].nil?
+        #   content[:redirect_through].insert(0, url)
           
+        #   content[:response_time] = Time.now.to_f - request_time
+        # else
           content[:response_time] = Time.now.to_f - request_time
-        else
-          content[:response_time] = Time.now.to_f - request_time
-          
+          content[:redirect_through] = response.redirections if response.redirect_count > 0
+        
           puts "Retrieved." unless options[:quiet]
 
           # create the content container
@@ -96,7 +103,7 @@ module CobwebRequest
             content.merge! body_processing(response, content, options) if type == :get
           end
 
-        end
+        #end
         
         # add content to cache if required
         if options[:cache]
@@ -177,7 +184,7 @@ module CobwebRequest
     content[:text_content] = text_content?(existing_content[:mime_type], options)
     
     if text_content?(existing_content[:mime_type], options)
-      if response.headers["Content-Encoding"]=="gzip"
+      if response.headers["content-encoding"]=="gzip"
         content[:body] = Zlib::GzipReader.new(StringIO.new(response.body)).read
       else
         content[:body] = response.body

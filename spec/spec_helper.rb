@@ -32,23 +32,8 @@ RSpec.configure do |config|
 
 end
 
-class DummyCache
-  include CacheManager
-  def initialize(opts)
-  end
-  
-  def get(key)
-    nil
-  end
-  def set(key,value)
-  end
-  def in_cache?(key)
-    false
-  end
-end
-
 class SimpleHashCache
-  include CacheManager
+  include CobwebCacheManager
   attr_accessor :cache
   
   def initialize(opts)
