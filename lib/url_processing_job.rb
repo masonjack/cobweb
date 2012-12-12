@@ -25,7 +25,7 @@ class UrlProcessingJob
     
     # check if there is any other items on the queue,
     # if there is not, we are done!
-    if(Resque.size(@queue) == 0)
+    if(!in_progress?(content[:crawl_id]))
       clazz = const_get(content_options[:crawl_finished_queue])
       Resque.enqueue(clazz, content_options)
     end
@@ -44,21 +44,28 @@ class UrlProcessingJob
   end
 
 
-  def self.currently_running
-    Resque::Worker.working.map(&:job).map(&:payload)
+  def self.currently_running(crawl_id)
+
+    jobs = Resque::Worker.working.map(&:job).map do |j|
+      j["payload"]["args"][0]["crawl_id"] if j["payload"]["class"] == self.name
+    end
+    jobs.include?(crawl_id) && jobs.size > 1
   end
 
-  def self.queued_jobs
+  def self.queued_jobs_remain?(crawl_id)
     payloads = []
     index = 0;
     while (payload = Resque.redis.lindex("queue:#{@queue}", index)) do
-      payloads << payload
+      h_payload = JSON.parse(payload)
+      payloads << h_payload["args"][0]["crawl_id"]
+      index +=1
     end
-    payloads
+    
+    payloads.include?(crawl_id)
   end
 
-  def in_progress?
-    
+  def self.in_progress?(crawl_id)
+    currently_running(crawl_id) || queued_jobs_remain?(crawl_id)
   end
   
 end
