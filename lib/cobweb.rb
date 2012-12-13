@@ -4,6 +4,7 @@ require 'resque'
 require "addressable/uri"
 require 'digest/sha1'
 require 'base64'
+require 'rchardet'
 
 Dir[File.dirname(__FILE__) + '/**/*.rb'].each do |file|
   require file

@@ -15,6 +15,7 @@ gem 'rspec'
 gem 'rspec-core'
 gem 'mock_redis'
 gem 'aws-s3'
+gem 'rchardet'
 
 gem 'simplecov', :require => false, :group => :test
 
