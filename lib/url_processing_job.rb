@@ -25,7 +25,7 @@ class UrlProcessingJob
     
     # check if there is any other items on the queue,
     # if there is not, we are done!
-    if(!in_progress?(content[:crawl_id]))
+    unless in_progress?(content[:crawl_id])
       clazz = const_get(content_options[:crawl_finished_queue])
       Resque.enqueue(clazz, content_options)
     end

@@ -9,7 +9,6 @@
     
     def initialize(options={})
       @counter = 0
-      @base_crawled=false
       @urls = []
       @crawled = []
       @options = setup_defaults(HashUtil.deep_symbolize_keys(options))      
@@ -27,17 +26,16 @@
         raw_content = cobweb.get(url)
         
         content = CobwebModule::CrawlObject.new(raw_content, @options)
-        
+
         process_links(content)
-        
-        @base_crawled=true
+        @crawled << url
         
         if within_crawl_limits? && dig? 
           new_count = count+1
           uri = @urls[new_count]
-          @crawled << uri
-          status = retrieve(uri, new_count) unless @crawled.include?(uri)
-          
+          if uri
+            status = retrieve(uri, new_count) unless @crawled.include?(uri)
+          end          
         end
         
         return true if content.permitted_type?

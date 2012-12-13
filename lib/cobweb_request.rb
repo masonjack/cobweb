@@ -1,6 +1,5 @@
 require 'typhoeus'
 
-
 module CobwebRequest
   
   def request(url, type, cache_manager, options)
@@ -192,7 +191,7 @@ module CobwebRequest
     else
       content[:body] = Base64.encode64(response.body)
     end
-
+    
     content[:location] = response.headers["location"]
          
     content[:headers] = HashUtil.deep_symbolize_keys(response.headers)
