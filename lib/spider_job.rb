@@ -1,5 +1,5 @@
 require 'resque'
-
+require 'resque/batched_job'
 
 class SpiderJob
 
@@ -18,9 +18,11 @@ class SpiderJob
   def self.enqueue_urls(urls, content_request)
     processing_clazz = Object::const_get(content_request[:processing_queue])
     queued = []
+    batch_id = content_request[:crawl_id]
     urls.each do |url|
+      
       content_request[:retrieve_url] = url
-      queued << Resque.enqueue(processing_clazz, content_request)
+      queued << Resque.enqueue_batched_job(processing_clazz, batch_id, content_request)
     end
 
     queued.all?

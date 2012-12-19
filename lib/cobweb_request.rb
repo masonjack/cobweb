@@ -80,26 +80,24 @@ module CobwebRequest
           
         #   content[:response_time] = Time.now.to_f - request_time
         # else
-          content[:response_time] = Time.now.to_f - request_time
-          content[:redirect_through] = response.redirections if response.redirect_count > 0
+        content[:response_time] = Time.now.to_f - request_time
+        content[:redirect_through] = response.redirections if response.redirect_count > 0
         
           puts "Retrieved." unless options[:quiet]
 
-          # create the content container
-          content[:url] = uri.to_s
-          content[:status_code] = response.code.to_i
-          content[:mime_type] = ""
-          unless response.headers["content-type"].nil?
-            content[:mime_type] = response.headers["content-type"].split(";")[0].strip
-            ct = response.headers["content-type"]
-            
-            if ct.include?(";")
-              charset = ct[ct.index(";")+2..-1] if !ct.nil? and ct.include?(";")
-              charset = charset[charset.index("=")+1..-1] if charset and charset.include?("=")
-              content[:character_set] = charset
-            end
+        # create the content container
+        content[:url] = uri.to_s
+        content[:status_code] = response.code.to_i
+        content[:mime_type] = ""
+        
+        unless response.headers["content-type"].nil?
+          ctype = ContentProcessor.determine_content_type(content, response.headers)
+          content[:character_set] = ctype.character_set
+          content[:content_type] = ctype.content_type
+          content[:mime_type] = ctype.mime_type
+          
 
-            content.merge! body_processing(response, content, options) if type == :get
+          content.merge! body_processing(response, content, options) if type == :get
           end
 
         #end
