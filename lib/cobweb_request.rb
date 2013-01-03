@@ -57,6 +57,10 @@ module CobwebRequest
           response = Typhoeus::Request.head(url, http_opts)
         end
         
+        if response.options[:return_code] == :couldnt_resolve_host
+          raise SocketError, "Could not resolve hostname", caller
+        end
+        
         # if options[:follow_redirects] and response.code.to_i >= 300 and response.code.to_i < 400
         #   puts "redirected... " unless options[:quiet]
           
@@ -83,7 +87,7 @@ module CobwebRequest
         content[:response_time] = Time.now.to_f - request_time
         content[:redirect_through] = response.redirections if response.redirect_count > 0
         
-          puts "Retrieved." unless options[:quiet]
+        puts "Retrieved." unless options[:quiet]
 
         # create the content container
         content[:url] = uri.to_s

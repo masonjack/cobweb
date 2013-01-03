@@ -51,6 +51,18 @@ describe SimpleCrawl do
     end
     
   end
+
+  context "Error cases" do
+
+    it "should stop crawling when dns errors occur" do
+      @options[:url] = "http://www.efsdephox.com"
+      crawl = SimpleCrawl.new(@options)
+      crawl.retrieve.should be_false
+    end
+    
+    
+  end
+  
   
   
 end
