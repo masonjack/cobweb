@@ -6,9 +6,13 @@ class UrlProcessingJob
   @queue = :cobweb_content_processing
 
   def self.perform(bid, content_options)
-
     # fetch the content
     options = HashUtil.deep_symbolize_keys(content_options)
+    # We allow all the items in the batch to fail at the moment. This
+    # means that the end of processing job will still be fired even if
+    # all the url_processing_jobs fails
+    @acceptable_failure_count = options[:crawl_limit]
+
     processor = Cobweb.new(content_options)
     
     url = options[:retrieve_url]

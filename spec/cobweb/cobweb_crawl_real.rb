@@ -59,9 +59,9 @@ describe Cobweb, :local_only => true do
 
   after(:all) do
 
-    @all_processes = `ps aux | grep resque | grep -v grep | grep -v resque-web | awk '{print $2}'`.split("\n")
-    command = "kill -9 #{(@all_processes - @existing_processes).join(" ")}"
-    IO.popen(command)
+    #@all_processes = `ps aux | grep resque | grep -v grep | grep -v resque-web | awk '{print $2}'`.split("\n")
+    #command = "kill -9 #{(@all_processes - @existing_processes).join(" ")}"
+    #IO.popen(command)
     
     clear_queues
   end
@@ -84,12 +84,7 @@ def wait_for_crawl_finished(crawl_id, timeout=2000)
 end
 
 def running?(crawl_id)
-  spider_items = Resque.size("cobweb_process_job") || 0
-  process_items = Resque.size("cobweb_content_processing") || 0
-
-  size = spider_items.size + process_items
-  return true if size > 0
-  return false
+  UrlProcessingJob.in_progress?(crawl_id)
   
 end
 
