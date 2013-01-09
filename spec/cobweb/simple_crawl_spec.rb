@@ -38,24 +38,20 @@ describe SimpleCrawl do
     puts crawl.urls
     puts "--------"
     
-    check_urls = []
-    counter = 1
-    crawl.urls.each do |u|
-      counter += 1
-      puts "adding #{u}"
-      if check_urls.include? u        
-        fail "duplicate found at #{check_urls.index(u)} - count #{counter}" 
-      end
-      
-      check_urls << u
-    end
-    
+    check_for_duplicates(crawl.urls)
   end
 
+  it "should clean urls so that uniqueness can be properly determined" do
+    @options[:url] = "http://www.eeeeeeephox.com/"
+    crawl = SimpleCrawl.new(@options)
+    result = crawl.send(:clean_url, @options[:url])
+    result.should == "http://www.eeeeeeephox.com"
+  end
+  
   context "Error cases" do
 
     it "should stop crawling when dns errors occur" do
-      @options[:url] = "http://www.efsdephox.com"
+      @options[:url] = "http://www.eeeeeeephox.com"
       crawl = SimpleCrawl.new(@options)
       crawl.retrieve.should be_false
     end
@@ -63,6 +59,23 @@ describe SimpleCrawl do
     
   end
   
+
+  def check_for_duplicates(urls)
+    check_urls = []
+    counter = 1
+    urls.each {|u| puts u}
+    urls.each do |u|
+
+      puts "adding #{u}"
+      if check_urls.include? u        
+        fail "duplicate found at #{check_urls.index(u)} - count #{counter} - #{u}" 
+      end
+      
+      check_urls << u
+      counter += 1
+    end
+
+  end
   
   
 end

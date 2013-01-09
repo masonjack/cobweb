@@ -11,8 +11,7 @@ class SpiderJob
     if crawl.retrieve
       enqueue_urls(crawl.urls, content_request)
     end
-    
-    \
+
   end
 
   def self.enqueue_urls(urls, content_request)

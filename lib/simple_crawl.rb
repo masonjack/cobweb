@@ -1,4 +1,4 @@
-
+require 'set'
 #module Cobweb
   # This is not intended to be scalable, its only intention is to be solid and correct.
   class SimpleCrawl
@@ -9,16 +9,17 @@
     
     def initialize(options={})
       @counter = 0
-      @urls = []
-      @crawled = []
+      @urls = Set.new
+      @crawled = Set.new
       @options = setup_defaults(HashUtil.deep_symbolize_keys(options))      
     end
 
     def retrieve(url=nil,count=0)
       puts " retrieve: count: #{count}"
-      
       url = @options[:url] unless url
-      @urls << url unless @urls.include? url
+      
+      url = clean_url(url)
+      @urls << url # the mechanics of the set ensure no duplicates
       
       cobweb = Cobweb.new(@options)
 
@@ -32,10 +33,11 @@
           
         process_links(content)
         @crawled << url
+        url_arr = @urls.to_a
         
         if within_crawl_limits? && dig? 
           new_count = count+1
-          uri = @urls[new_count]
+          uri = url_arr[new_count]
           if uri
             status = retrieve(uri, new_count) unless @crawled.include?(uri)
           end          
@@ -58,6 +60,15 @@
       options
     end
 
+    def clean_url(url)
+      clean = url.strip
+      if url[-1] == "/"
+         clean = url[0..-2]
+      end
+
+      clean
+    end
+    
 
     def dig?
       if options[:depth]
@@ -96,7 +107,8 @@
           internal_links.each do |link|
 
             yield link if block_given?
-            @urls << link if within_crawl_limits? 
+            clean_link = clean_url(link)
+            @urls << clean_link if within_crawl_limits?
           end
         rescue NoMethodError => e
           puts "no body for this content"
