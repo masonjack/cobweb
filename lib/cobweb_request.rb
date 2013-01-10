@@ -94,7 +94,7 @@ module CobwebRequest
         content[:status_code] = response.code.to_i
         content[:mime_type] = ""
         
-        unless response.headers["content-type"].nil?
+        unless headers_access(response.headers, "content-type") == nil
           ctype = ContentProcessor.determine_content_type(content, response.headers)
           content[:character_set] = ctype.character_set
           content[:content_type] = ctype.content_type
@@ -102,8 +102,9 @@ module CobwebRequest
           
 
           content.merge! body_processing(response, content, options) if type == :get
-          end
-
+          
+        end
+        
         #end
         
         # add content to cache if required
@@ -112,7 +113,7 @@ module CobwebRequest
         else
           puts "Not storing in cache as cache disabled" if options[:debug]
         end
-        
+
       rescue RedirectError => e
         puts "ERROR RedirectError: #{e.message}"
         
@@ -181,11 +182,11 @@ module CobwebRequest
     puts "BODY PROCESSING!" if options[:debug]
     
     content = {}
-    content[:length] = response.headers["Content-Length"]
+    content[:length] = headers_access(response.headers, "content-length")
     content[:text_content] = text_content?(existing_content[:mime_type], options)
     
     if text_content?(existing_content[:mime_type], options)
-      if response.headers["content-encoding"]=="gzip"
+      if (headers_access(response.headers,"content-encoding")=="gzip")
         content[:body] = Zlib::GzipReader.new(StringIO.new(response.body)).read
       else
         content[:body] = response.body
@@ -194,9 +195,12 @@ module CobwebRequest
       content[:body] = Base64.encode64(response.body)
     end
     
-    content[:location] = response.headers["location"]
-         
-    content[:headers] = HashUtil.deep_symbolize_keys(response.headers)
+    content[:location] = headers_access(response.headers, "location")
+
+    raw_hash_headers = {}    
+    raw_hash_headers.replace(response.headers)
+    content[:headers] = HashUtil.deep_symbolize_keys(raw_hash_headers)
+    
     # parse data for links
     link_parser = ContentLinkParser.new(content[:url], content[:body])
     content[:links] = link_parser.link_data
@@ -204,6 +208,16 @@ module CobwebRequest
     content
   end
 
+  # work around bug in typhoeus until fix is finalized
+  # https://github.com/typhoeus/typhoeus/issues/227
+  def headers_access(headers, key)
+    value = headers[key]
+    if value == headers
+      return nil
+    end
+    value
+  end
+  
 
   def text_content?(content_type, options)
     options[:text_mime_types].each do |mime_type|

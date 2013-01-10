@@ -29,7 +29,7 @@ require 'set'
         content = CobwebModule::CrawlObject.new(raw_content, @options)
 
         # We cant continue if the various error exceptions are thrown
-        return false if(raw_content[:mime_type] =~ /error/)
+        return false if(raw_content[:mime_type] =~ /error.*/)
           
         process_links(content)
         @crawled << url

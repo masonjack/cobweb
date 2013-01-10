@@ -10,6 +10,12 @@ class SpiderJob
     crawl = SimpleCrawl.new(content_request)
     if crawl.retrieve
       enqueue_urls(crawl.urls, content_request)
+    else
+      # Failed to start the crawling process for whatever reason, so
+      # we complete the job. There will be no results for the site however
+      puts "Error beginning crawl!" 
+      processing_clazz = Object::const_get(content_request[:crawl_finished_queue])      
+      Resque.enqueue(processing_clazz, content_request)
     end
 
   end
