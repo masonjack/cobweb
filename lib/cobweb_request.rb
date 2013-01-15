@@ -95,14 +95,16 @@ module CobwebRequest
         content[:mime_type] = ""
         
         unless headers_access(response.headers, "content-type") == nil
-          ctype = ContentProcessor.determine_content_type(content, response.headers)
+          ctype = ContentProcessor.determine_content_type(content[:body], response.headers)
           content[:character_set] = ctype.character_set
           content[:content_type] = ctype.content_type
           content[:mime_type] = ctype.mime_type
           
 
-          content.merge! body_processing(response, content, options) if type == :get
-          
+          if type == :get
+            content.merge! body_processing(response, content, options) 
+            content[:body] = ctype.convert_to_utf8(content[:body])
+          end
         end
         
         #end

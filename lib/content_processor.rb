@@ -1,10 +1,12 @@
 # encoding: utf-8
+require 'charlock_holmes'
 
 class ContentProcessor
 
   attr_reader :mime_type
   attr_reader :content_type
   attr_reader :character_set
+  attr_reader :converted_content
   
   def self.determine_content_type(content, headers)
     new(header_content_type(headers), content)
@@ -35,20 +37,16 @@ class ContentProcessor
   end
 
   def validate_character_encoding(content)
-    #puts content
-    # cd = CharDet.detect(content)
-    # encoding = cd['encoding']
-    # confidence = cd['confidence']
+    detection = CharlockHolmes::EncodingDetector.detect(content)
+    if(detection[:encoding] != @character_set)
+      # prefer the detected character set rather than the provided data
+      @character_set = detection[:encoding]
+    end
+        
+  end
 
-    # # if confidence > 0.4
-    # unless encoding == @character_set
-    #   # prefer the body content detection rather than using the header
-    #   # provided information
-    #   @character_set = encoding
-    # end
-    # end
-    
-    
+  def convert_to_utf8(content)
+    CharlockHolmes::Converter.convert(content, @character_set, 'UTF-8')
   end
   
   
