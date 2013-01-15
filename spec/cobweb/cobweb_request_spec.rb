@@ -56,7 +56,12 @@ describe Cobweb do
       content[:mime_type].should eql "error/dnslookup"
       content[:error].should == "Could not resolve hostname"
     end
-    
+
+        it "should return 404 for the error code when nonexistant page is requested" do
+      content = @requester.request("http://www.ephox.com/cobweb_dummy_request.jspd", :get, DummyCache.new(nil), @default_opts)
+      content[:status_code].should eql 404
+    end
+
   end
 
   describe "head requests " do
@@ -67,6 +72,11 @@ describe Cobweb do
       puts content
       content[:mime_type].should eql "text/html"
       content[:character_set].should eql nil
+    end
+    
+    it "should return 404 for the error code when nonexistant page is requested with head" do
+      content = @requester.request("http://www.ephox.com/cobweb_dummy_request.jspd", :head, DummyCache.new(nil), @default_opts)
+      content[:status_code].should eql 404
     end
 
     
