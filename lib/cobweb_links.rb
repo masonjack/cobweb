@@ -1,10 +1,20 @@
 
 # CobwebLinks processes links to determine whether they are internal or external links
 class CobwebLinks
-  
+  def self.default_internal_urls(options)
+    if options[:internal_urls].nil? || options[:internal_urls].empty?
+      uri = Addressable::URI.parse(base_url)
+      options[:internal_urls] = []
+      options[:internal_urls] << [uri.scheme, "://", uri.host, "/*"].join
+      options[:internal_urls] << [uri.scheme, "://", uri.host, ":", uri.inferred_port, "/*"].join
+    end
+    options
+  end
+
   # Initalise's internal and external patterns and sets up regular expressions
   def initialize(options={})
-    @options = options
+    @options = self.default_internal_urls(options)
+
     
     raise InternalUrlsMissingError, ":internal_urls is required" unless @options.has_key? :internal_urls
     raise InvalidUrlsError, ":internal_urls must be an array" unless @options[:internal_urls].kind_of? Array
