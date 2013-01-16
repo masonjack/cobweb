@@ -57,7 +57,7 @@ describe Cobweb do
       content[:error].should == "Could not resolve hostname"
     end
 
-        it "should return 404 for the error code when nonexistant page is requested" do
+    it "should return 404 for the error code when nonexistant page is requested" do
       content = @requester.request("http://www.ephox.com/cobweb_dummy_request.jspd", :get, DummyCache.new(nil), @default_opts)
       content[:status_code].should eql 404
     end
