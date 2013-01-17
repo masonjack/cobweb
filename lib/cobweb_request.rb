@@ -3,7 +3,7 @@ require 'typhoeus'
 module CobwebRequest
   
   def request(url, type, cache_manager, options)
-
+    options = options.merge(@options)
     raise "url cannot be nil" if url.nil?
     uri = Addressable::URI.parse(url)
     uri.normalize!

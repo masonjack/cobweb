@@ -13,9 +13,8 @@ class CobwebLinks
 
   # Initalise's internal and external patterns and sets up regular expressions
   def initialize(options={})
-    @options = self.default_internal_urls(options)
+    @options = self.class.default_internal_urls(options)
 
-    
     raise InternalUrlsMissingError, ":internal_urls is required" unless @options.has_key? :internal_urls
     raise InvalidUrlsError, ":internal_urls must be an array" unless @options[:internal_urls].kind_of? Array
     raise InvalidUrlsError, ":external_urls must be an array" unless !@options.has_key?(:external_urls) || @options[:external_urls].kind_of?(Array)

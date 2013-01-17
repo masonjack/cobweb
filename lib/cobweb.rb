@@ -87,13 +87,13 @@ class Cobweb
     end
   end
 
-  # Performs a HTTP GET request to the specified url applying the options supplied
-  def get(url, options = @options)
+  # Performs a HTTP GET request to the specified url applying the options supplied in addition to the options being used for the current cobweb instance
+  def get(url, options = {})
     request(url, :get, @cache_manager, options)
   end
 
-  # Performs a HTTP HEAD request to the specified url applying the options supplied
-  def head(url, options = @options)
+  # Performs a HTTP GET request to the specified url applying the options supplied in addition to the options being used for the current cobweb instance
+  def head(url, options = {})
     request(url, :head, @cache_manager, options)
   end
 
