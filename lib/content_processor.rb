@@ -1,5 +1,5 @@
 # encoding: utf-8
-require 'charlock_holmes'
+#require 'charlock_holmes'
 
 class ContentProcessor
 
@@ -37,16 +37,17 @@ class ContentProcessor
   end
 
   def validate_character_encoding(content)
-    detection = CharlockHolmes::EncodingDetector.detect(content)
-    if(detection[:encoding] != @character_set)
-      # prefer the detected character set rather than the provided data
-      @character_set = detection[:encoding]
-    end
+    # detection = CharlockHolmes::EncodingDetector.detect(content)
+    # if(detection[:encoding] != @character_set)
+    #   # prefer the detected character set rather than the provided data
+    #   @character_set = detection[:encoding]
+    # end
         
   end
 
   def convert_to_utf8(content)
-    CharlockHolmes::Converter.convert(content, @character_set, 'UTF-8')
+    content
+    #CharlockHolmes::Converter.convert(content, @character_set, 'UTF-8')
   end
   
   
