@@ -1,0 +1,30 @@
+# -*-Org-*-
+#+TITLE: Notes for cobweb's design
+
+26/10/2012
+
+* ContentLinkParser
+ - The class where the actual content is consumed within cobweb.
+   - additional content will be need to worked and made available via
+     this class. This class is where the content is made available to
+     consumers
+ - the result of the all_links method is array of absolute urls
+ - Stats are overall information about the crawls in progress
+
+*  CobwebLinks is the class that determines the difference between an internal links and external links
+
+* CobwebCrawler
+ - Shared state within the cobwebcrawler is most likely going to cause
+   problems down the line. The state is shared between threads, and
+   will cause problems overall. We are currently relying on the fact
+   of the global interpreter lock to make it simpler to reason about,
+   but to scale I'm pretty sure this will cause issues and long
+   crawling reliablity issues.
+
+* Cobweb is the logical entry point into the crawler. 
+ - Kind of clunky in that the get and head requests are done from within
+   this class, and kind of redundant code within the two methods
+   that do very broadly the same thing.
+ - this could pretty easily be refactored to make the whole thing a
+   lot cleaner
+ - 

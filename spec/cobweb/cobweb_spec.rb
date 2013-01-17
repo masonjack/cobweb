@@ -1,10 +1,12 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require File.expand_path(File.dirname(__FILE__) + '/../mocks_setup')
 
+# Tests the internals using the external API
 describe Cobweb do
 
   before(:each) do
     @base_url = "http://www.baseurl.com/"
-    @cobweb = Cobweb.new :quiet => true, :cache => nil
+    @cobweb = Cobweb.new :quiet => true, :cache => nil, :cache_manager => DummyCache.new
   end
   
   it "should generate a cobweb object" do
@@ -18,7 +20,7 @@ describe Cobweb do
     
     options[:follow_redirects].should == true
     options[:redirect_limit].should == 10
-    options[:processing_queue].should == "CobwebProcessJob"
+    options[:processing_queue].should == "SpiderJob"
     options[:crawl_finished_queue].should == "CobwebFinishedJob"
     options[:quiet].should == true
     options[:debug].should == false
@@ -47,12 +49,8 @@ describe Cobweb do
         @cobweb.get(@base_url)[:url].should == @base_url
       end
       it "should return correct content-type" do
-        @mock_http_response.stub!(:content_type).and_return("image/jpeg")
+        @default_headers["content-type"] = "image/jpeg"
         @cobweb.get(@base_url)[:mime_type].should == "image/jpeg"
-      end
-      it "should return correct status-code" do
-        @mock_http_response.stub!(:code).and_return(404)
-        @cobweb.get(@base_url)[:status_code].should == 404
       end
       it "should return correct status-code" do
         @mock_http_response.stub!(:code).and_return(404)
@@ -62,15 +60,14 @@ describe Cobweb do
         @cobweb.get(@base_url)[:character_set].should == "UTF-8"
       end 
       it "should return correct content_length" do
+        @default_headers["Content-Length"] = 1024
         @cobweb.get(@base_url)[:length].should == 1024
       end
       it "should return correct content_body" do
         @cobweb.get(@base_url)[:body].should == "asdf"
       end
       it "should return correct location" do
-        @cobweb.get(@base_url)[:location].should == nil
-
-        @mock_http_response.stub!(:[]).with("location").and_return("http://google.com/")
+        @default_headers["location"] = "http://google.com/"
         @cobweb.get(@base_url)[:location].should == "http://google.com/"
       end
       it "should return correct headers" do
@@ -87,7 +84,7 @@ describe Cobweb do
       
       before(:each) do
         @base_url = "http://redirect-me.com/redirect.html"
-        @cobweb = Cobweb.new(:follow_redirects => true, :quiet => true, :cache => nil)
+        @cobweb = Cobweb.new(:follow_redirects => true, :quiet => true, :cache => nil, :cache_manager => DummyCache.new)
         
         @mock_http_response.stub!(:[]).with("location").and_return("http://google.com/")
         @mock_http_redirect_response.stub!(:[]).with("location").and_return("http://redirected-to.com/redirect2.html")
@@ -117,10 +114,11 @@ describe Cobweb do
         
       #end
       it "should not follow with redirect disabled" do
-        @cobweb = Cobweb.new(:follow_redirects => false, :cache => 3)
-        @mock_http_client.should_receive(:request).with(@mock_http_redirect_request).and_return(@mock_http_redirect_response)
-        
+        @cobweb = Cobweb.new(:follow_redirects => false, :cache => 3, :cache_manager => DummyCache.new)
+        Typhoeus::Request.stub!(:get).with(@base_url, @default_options).and_return(@mock_http_redirect_response)
+
         content = @cobweb.get(@base_url)
+        
         content[:url].should == "http://redirect-me.com/redirect.html"
         content[:redirect_through].should be_nil
         content[:status_code].should == 301
@@ -133,8 +131,8 @@ describe Cobweb do
     describe "with cache" do
       
       before(:each) do
-        @cobweb = Cobweb.new :quiet => true, :cache => 1
-        Redis.new.flushdb
+        @cobweb = Cobweb.new :quiet => true, :cache => 1, :cache_manager => SimpleHashCache.new
+        #Redis.new.flushdb
       end
       
       describe "content object" do
@@ -143,7 +141,7 @@ describe Cobweb do
           @cobweb.get(@base_url)[:url].should == @base_url
         end
         it "should return correct content-type" do
-          @mock_http_response.stub!(:content_type).and_return("image/jpeg")
+          @default_headers["content-type"] = "image/jpeg"
           @cobweb.get(@base_url)[:mime_type].should == "image/jpeg"
           @cobweb.get(@base_url)[:mime_type].should == "image/jpeg"
         end
@@ -162,6 +160,7 @@ describe Cobweb do
           @cobweb.get(@base_url)[:character_set].should == "UTF-8"
         end 
         it "should return correct content_length" do
+          @default_headers["Content-Length"] = 1024
           @cobweb.get(@base_url)[:length].should == 1024
           @cobweb.get(@base_url)[:length].should == 1024
         end
@@ -185,23 +184,19 @@ describe Cobweb do
     end
     describe "location setting" do
       it "Get should strip fragments" do
-        Net::HTTP.should_receive(:new).with("www.google.com", 80)
-        Net::HTTP::Get.should_receive(:new).with("/", {})
+        Typhoeus::Request.should_receive(:get).with("http://www.google.com/", @default_options).and_return(@mock_http_response)
         @cobweb.get("http://www.google.com/#ignore")
       end
       it "head should strip fragments" do
-        Net::HTTP.should_receive(:new).with("www.google.com", 80)
-        Net::HTTP::Head.should_receive(:new).with("/", {}).and_return(@mock_http_request)
+        Typhoeus::Request.should_receive(:head).with("http://www.google.com/", @default_options).and_return(@mock_http_response)
         @cobweb.head("http://www.google.com/#ignore")
       end
       it "get should not strip path" do
-        Net::HTTP.should_receive(:new).with("www.google.com", 80)
-        Net::HTTP::Get.should_receive(:new).with("/path/to/stuff", {})
+        Typhoeus::Request.should_receive(:get).with("http://www.google.com/path/to/stuff", @default_options).and_return(@mock_http_response)
         @cobweb.get("http://www.google.com/path/to/stuff#ignore")
       end
       it "get should not strip query string" do
-        Net::HTTP.should_receive(:new).with("www.google.com", 80)
-        Net::HTTP::Get.should_receive(:new).with("/path/to/stuff?query_string", {})
+        Typhoeus::Request.should_receive(:get).with("http://www.google.com/path/to/stuff?query_string", @default_options).and_return(@mock_http_response)
         @cobweb.get("http://www.google.com/path/to/stuff?query_string#ignore")
       end
     end

@@ -6,3 +6,6 @@ dump.rdb
 tmp
 log
 atlassian-ide-plugin.xml
+TAGS
+coverage/*
+coverage

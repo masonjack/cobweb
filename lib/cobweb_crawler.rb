@@ -2,6 +2,7 @@ require 'digest/md5'
 require 'date'
 require 'ap'
 require 'redis-namespace'
+require 'typhoeus'
 
 # CobwebCrawler is a standalone crawler, it includes a built in statistics monitor using Sinatra.
 class CobwebCrawler

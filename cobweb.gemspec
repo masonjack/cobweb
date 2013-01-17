@@ -27,4 +27,6 @@ Gem::Specification.new do |s|
   s.add_dependency('haml')
   s.add_dependency('namespaced_redis', '>= 1.0.2')
   s.add_dependency('json')
+  s.add_dependency('rchardet')
+  s.add_dependency('resque-batched-job')
 end
