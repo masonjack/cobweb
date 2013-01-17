@@ -3,7 +3,7 @@
 class CobwebLinks
   def self.default_internal_urls(options)
     if options[:internal_urls].nil? || options[:internal_urls].empty?
-      uri = Addressable::URI.parse(base_url)
+      uri = Addressable::URI.parse(options[:base_url])
       options[:internal_urls] = []
       options[:internal_urls] << [uri.scheme, "://", uri.host, "/*"].join
       options[:internal_urls] << [uri.scheme, "://", uri.host, ":", uri.inferred_port, "/*"].join
