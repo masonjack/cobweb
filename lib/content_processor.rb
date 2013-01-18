@@ -38,16 +38,21 @@ class ContentProcessor
 
   def validate_character_encoding(content)
     # detection = CharlockHolmes::EncodingDetector.detect(content)
-    # if(detection[:encoding] != @character_set)
-    #   # prefer the detected character set rather than the provided data
-    #   @character_set = detection[:encoding]
-    # end
+    detection = content.encoding.name
+     if(detection != @character_set)
+       # prefer the detected character set rather than the provided data
+        @character_set = detection
+     end
         
   end
 
   def convert_to_utf8(content)
-    content
+    # if we can find a way to make charlock_holmes work on heroku,
+    # then this line will work, and do what is required. Until this
+    # point, we just return content
     #CharlockHolmes::Converter.convert(content, @character_set, 'UTF-8')
+    
+    content
   end
   
   
