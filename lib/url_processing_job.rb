@@ -1,3 +1,4 @@
+require 'resque/errors'
 
 class UrlProcessingJob
 
@@ -16,7 +17,7 @@ class UrlProcessingJob
     processor = Cobweb.new(content_options)
     
     url = options[:retrieve_url]
-    puts "url to be processed is #{url}"
+    puts "url to be processed is #{url}" if options[:debug]
     
     content = processor.get( url, options)
     content_to_send = content_options.merge(content)
@@ -26,8 +27,9 @@ class UrlProcessingJob
     # from the queueing mechanism that the worker in intended to
     # shutdown. Thus we need to cleanup and put this job back on the
     # queue to be restarted by anther worker - Resolves GALAXY-784
-    if start_processor(options[:url_processor], content_to_send).kind_of? SignalException
+    if start_processor(options[:url_processor], content_to_send).kind_of? Resque::TermException
       QueueManager.requeue_job(self, bid, content_options)
+      return
     end
     
 

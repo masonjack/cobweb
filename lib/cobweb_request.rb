@@ -45,7 +45,7 @@ module CobwebRequest
       begin
         print "Retrieving #{url }... " unless options[:quiet]
 
-        puts("options: #{http_opts}")
+        puts("options: #{http_opts}") if options[:debug]
         
         #if options[:cookies]
         #  request_options[ 'Cookie']= options[:cookies]
@@ -87,7 +87,7 @@ module CobwebRequest
         content[:response_time] = Time.now.to_f - request_time
         content[:redirect_through] = response.redirections if response.redirect_count > 0
         
-        puts "Retrieved." unless options[:quiet]
+        puts "Retrieved." if options[:debug]
 
         # create the content container
         content[:url] = uri.to_s
