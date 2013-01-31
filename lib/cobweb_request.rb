@@ -43,8 +43,7 @@ module CobwebRequest
       request_time = Time.now.to_f
       
       begin
-        print "Retrieving #{url }... " unless options[:quiet]
-
+        puts "Retrieving #{url }... " unless options[:quiet]
         puts("options: #{http_opts}") if options[:debug]
         
         #if options[:cookies]
@@ -53,8 +52,10 @@ module CobwebRequest
 
         if type == :get
           response = Typhoeus::Request.new(url, http_opts).run
+          puts "get done" if options[:debug]
         elsif type == :head
           response = Typhoeus::Request.head(url, http_opts)
+          puts "head done" if options[:debug]
         end
         
         if response.options[:return_code] == :couldnt_resolve_host
@@ -222,10 +223,14 @@ module CobwebRequest
   
 
   def text_content?(content_type, options)
-    options[:text_mime_types].each do |mime_type|
-      return true if content_type.match(Cobweb.escape_pattern_for_regex(mime_type))
+    puts "about to check for text_content"
+    if(options[:text_mime_types]) 
+      options[:text_mime_types].each do |mime_type|
+        puts "checking text content"
+        return true if content_type.match(Cobweb.escape_pattern_for_regex(mime_type))
+      end
+      false
     end
-    false
   end
   
 end
