@@ -1,3 +1,4 @@
+require 'resque/errors'
 
 class UrlProcessingJob
 
@@ -16,12 +17,21 @@ class UrlProcessingJob
     processor = Cobweb.new(content_options)
     
     url = options[:retrieve_url]
-    puts "url to be processed is #{url}"
+    puts "url to be processed is #{url}" if options[:debug]
     
     content = processor.get( url, options)
     content_to_send = content_options.merge(content)
 
-    start_processor(options[:url_processor], content_to_send)
+    # When a processor returns a value, this means that a
+    # SignalException was raised while processing. THis is a signal
+    # from the queueing mechanism that the worker in intended to
+    # shutdown. Thus we need to cleanup and put this job back on the
+    # queue to be restarted by anther worker - Resolves GALAXY-784
+    if start_processor(options[:url_processor], content_to_send).kind_of? Resque::TermException
+      QueueManager.requeue_job(self, bid, content_options)
+      return
+    end
+    
 
     if(content_options[:additional_url_processors])
       content_options[:additional_url_processors].each do |processor|
@@ -31,6 +41,7 @@ class UrlProcessingJob
     
   end
 
+  
   def self.after_batch_finalization(bid, *args)
     content_options = args[0]
     clazz = const_get(content_options[:crawl_finished_queue])
@@ -40,12 +51,15 @@ class UrlProcessingJob
 
   def self.start_processor(klass_name, content)
     clazz = const_get(klass_name, content)
+    ret_val = nil
     
     if(clazz.respond_to? :perform)
-      clazz.perform(content)
+      ret_val =  clazz.perform(content)
     else
       raise "Supplied url_processor class does not respond to perform method"
     end
+
+    ret_val
   end
 
 

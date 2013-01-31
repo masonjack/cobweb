@@ -43,9 +43,8 @@ module CobwebRequest
       request_time = Time.now.to_f
       
       begin
-        print "Retrieving #{url }... " unless options[:quiet]
-
-        puts("options: #{http_opts}")
+        puts "Retrieving #{url }... " unless options[:quiet]
+        puts("options: #{http_opts}") if options[:debug]
         
         #if options[:cookies]
         #  request_options[ 'Cookie']= options[:cookies]
@@ -53,8 +52,10 @@ module CobwebRequest
 
         if type == :get
           response = Typhoeus::Request.new(url, http_opts).run
+          puts "get done" if options[:debug]
         elsif type == :head
           response = Typhoeus::Request.head(url, http_opts)
+          puts "head done" if options[:debug]
         end
         
         if response.options[:return_code] == :couldnt_resolve_host
@@ -87,7 +88,7 @@ module CobwebRequest
         content[:response_time] = Time.now.to_f - request_time
         content[:redirect_through] = response.redirections if response.redirect_count > 0
         
-        puts "Retrieved." unless options[:quiet]
+        puts "Retrieved." if options[:debug]
 
         # create the content container
         content[:url] = uri.to_s
@@ -95,14 +96,16 @@ module CobwebRequest
         content[:mime_type] = ""
         
         unless headers_access(response.headers, "content-type") == nil
-          ctype = ContentProcessor.determine_content_type(content, response.headers)
+          ctype = ContentProcessor.determine_content_type(response.body, response.headers)
           content[:character_set] = ctype.character_set
           content[:content_type] = ctype.content_type
           content[:mime_type] = ctype.mime_type
           
-
-          content.merge! body_processing(response, content, options) if type == :get
           
+          if type == :get
+            content.merge! body_processing(response, content, options) 
+            content[:body] = ctype.convert_to_utf8(response.body)
+          end
         end
         
         #end
@@ -220,10 +223,14 @@ module CobwebRequest
   
 
   def text_content?(content_type, options)
-    options[:text_mime_types].each do |mime_type|
-      return true if content_type.match(Cobweb.escape_pattern_for_regex(mime_type))
+    puts "about to check for text_content"
+    if(options[:text_mime_types]) 
+      options[:text_mime_types].each do |mime_type|
+        puts "checking text content"
+        return true if content_type.match(Cobweb.escape_pattern_for_regex(mime_type))
+      end
+      false
     end
-    false
   end
   
 end

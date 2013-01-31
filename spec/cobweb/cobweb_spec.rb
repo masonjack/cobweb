@@ -6,7 +6,7 @@ describe Cobweb do
 
   before(:each) do
     @base_url = "http://www.baseurl.com/"
-    @cobweb = Cobweb.new :quiet => true, :cache => nil, :cache_manager => DummyCache.new
+    @cobweb = Cobweb.new :quiet => true, :cache => nil
   end
   
   it "should generate a cobweb object" do
@@ -20,7 +20,7 @@ describe Cobweb do
     
     options[:follow_redirects].should == true
     options[:redirect_limit].should == 10
-    options[:processing_queue].should == "SpiderJob"
+    options[:processing_queue].should == "UrlProcessingJob"
     options[:crawl_finished_queue].should == "CobwebFinishedJob"
     options[:quiet].should == true
     options[:debug].should == false

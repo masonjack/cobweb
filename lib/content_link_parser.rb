@@ -73,21 +73,24 @@ class ContentLinkParser
       @doc.css(selector).each do |tag|
         begin
           array << Addressable::URI.parse(tag[attribute]).to_s
-        rescue
+        rescue TypeError => te
+        rescue LocalJumpError => lje
         end
       end
     elsif attribute.instance_of? Regexp
       @doc.css(selector).each do |tag|
         begin
           tag.content.scan(attribute) {|match| array << Addressable::URI.parse(match[0]).to_s}
-        rescue
+        rescue TypeError => te
+        rescue LocalJumpError => lje
         end
       end
     elsif attribute.instance_of? Proc
       @doc.css(selector).each do |tag|
         begin
-          attribute.call(array, tag)
-        rescue
+          attribute.call(array, tag) 
+        rescue TypeError => te
+        rescue LocalJumpError => lje
         end
       end
     end

@@ -1,8 +1,9 @@
 GIT
   remote: git://github.com/brianmario/charlock_holmes.git
-  revision: ede0ffadbf8def0aff009f55507f8bc21425c6ef
+  revision: 35a3afe1341b975e99825ed2d35729d52ec3029d
+  branch: bundle-icu
   specs:
-    charlock_holmes (0.6.9)
+    charlock_holmes (0.6.13)
 
 GIT
   remote: git://github.com/ephox/resque-batched-job
