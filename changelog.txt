@@ -1,5 +1,5 @@
-Change Log
-==========
+Change Log 
+========== 
 
 0.0.75
   Content link parser now uses the base tag if it is available
