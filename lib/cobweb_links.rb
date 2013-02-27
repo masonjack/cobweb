@@ -22,6 +22,7 @@ class CobwebLinks
     @options[:debug] = false unless @options.has_key? :debug
     
     @internal_patterns = @options[:internal_urls].map{|pattern| Regexp.new("^#{Cobweb.escape_pattern_for_regex(pattern)}")}
+    @internal_patterns << Regexp.new("^#{Cobweb.escape_pattern_for_regex(@options[:url])}")
     @external_patterns = @options[:external_urls].map{|pattern| Regexp.new("^#{Cobweb.escape_pattern_for_regex(pattern)}")}
     
   end
