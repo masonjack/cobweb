@@ -1,9 +1,9 @@
-GIT
-  remote: git://github.com/brianmario/charlock_holmes.git
-  revision: 35a3afe1341b975e99825ed2d35729d52ec3029d
-  branch: bundle-icu
-  specs:
-    charlock_holmes (0.6.13)
+#GIT
+#  remote: git://github.com/brianmario/charlock_holmes.git
+#  revision: 35a3afe1341b975e99825ed2d35729d52ec3029d
+#  branch: bundle-icu
+#  specs:
+#    charlock_holmes (0.6.13)
 
 GIT
   remote: git://github.com/ephox/resque-batched-job
@@ -81,7 +81,7 @@ DEPENDENCIES
   addressable
   awesome_print
   aws-s3
-  charlock_holmes!
+#  charlock_holmes!
   haml
   json
   mock_redis

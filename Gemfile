@@ -15,7 +15,7 @@ gem 'rspec'
 gem 'rspec-core'
 gem 'mock_redis'
 gem 'aws-s3'
-gem 'charlock_holmes', :git => "git://github.com/brianmario/charlock_holmes.git", :branch => "bundle-icu"
+#gem 'charlock_holmes', :git => "git://github.com/brianmario/charlock_holmes.git", :branch => "bundle-icu"
 
 gem "resque-batched-job", :git => "git://github.com/ephox/resque-batched-job"
 gem 'simplecov', :require => false, :group => :test
