@@ -8,6 +8,7 @@ class SpiderJob
   def self.perform(content_request)
 
     crawl = SimpleCrawl.new(content_request)
+    
     if crawl.retrieve
       puts "enqueuing urls for workers" 
       enqueue_urls(crawl.urls, content_request)
