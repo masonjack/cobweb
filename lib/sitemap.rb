@@ -1,5 +1,5 @@
 require 'nokogiri'
-
+require 'typhoeus'
 
 module CobwebSitemap
   
@@ -8,19 +8,40 @@ module CobwebSitemap
     attr_accessor :urls
     attr_accessor :content
 
-    def initialize(content)
-      raise "subclass must override"
+  end
+
+  class SiteIndex
+    attr_accessor :maps
+
+    # really simple somewhat silly check for index content
+    def self.index?(content)
+      content =~ /<.*sitemapindex.*>/
     end
-    
+
+    def initialize(content, map_type=XmlSitemap)
+      # TODO: need to support other sitemap types, since this wont
+      # do anything should we come across a text sitemap file
+      doc = Nokogiri::XML(content)
+      doc.remove_namespaces!
+      index_doc = doc.xpath("/sitemapindex")
+      if index_doc.length > 0
+        locations = doc.xpath("/sitemapindex/sitemap/loc")
+        @maps = locations.map do |location|
+          content = Utils.retrieve(location.text)
+          map_type.new(content.body)
+        end
+      end
+    end
+
   end
   
   
   class XmlSitemap < Sitemap
     def initialize(content)
       @urls = []
-      @xml = Nokogiri::XML(content)
-      @xml.remove_namespaces!
-      parse(@xml)
+      xml = Nokogiri::XML(content)
+      xml.remove_namespaces!
+      parse(xml)
       
     end
 
@@ -34,9 +55,7 @@ module CobwebSitemap
 
   class TextSitemap < Sitemap
     def initialize(content)
-      
     end
-    
   end
   
 
@@ -64,6 +83,13 @@ module CobwebSitemap
     
   end
 
+
+  class Utils
+    def self.retrieve(location)
+      Typhoeus::Request.new(location).run
+    end
+
+  end
   
   
 end
