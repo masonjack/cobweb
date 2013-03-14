@@ -18,7 +18,7 @@ module CobwebSitemap
       content =~ /<.*sitemapindex.*>/
     end
 
-    def initialize(content, map_type=XmlSitemap)
+    def initialize(content, map_type=XmlSitemap, limit=0)
       # TODO: need to support other sitemap types, since this wont
       # do anything should we come across a text sitemap file
       doc = Nokogiri::XML(content)
@@ -28,7 +28,7 @@ module CobwebSitemap
         locations = doc.xpath("/sitemapindex/sitemap/loc")
         @maps = locations.map do |location|
           content = Utils.retrieve(location.text)
-          map_type.new(content.body)
+          map_type.new(content.body, limit)
         end
       end
     end
@@ -37,17 +37,24 @@ module CobwebSitemap
   
   
   class XmlSitemap < Sitemap
-    def initialize(content)
+    def initialize(content, limit=0)
       @urls = []
       xml = Nokogiri::XML(content)
       xml.remove_namespaces!
-      parse(xml)
+      parse(xml, limit)
       
     end
 
-    def parse(xml)
+    def parse(xml, limit)
       url_nodes = xml.xpath("/urlset/url")
-      @urls = url_nodes.map { |unode| SitemapUrl.build_from_xml(unode) }
+      if limit > 0
+        nodes = url_nodes.slice(0,limit)
+      else
+        nodes = url_nodes
+      end
+      
+      
+      @urls = nodes.map { |unode| SitemapUrl.build_from_xml(unode) }
     end
     
     

@@ -17,9 +17,27 @@ require 'set'
     def retrieve(url=nil,count=0)
       puts " retrieve: count: #{count}"
       url = @options[:url] unless url
-      
       url = clean_url(url)
       @urls << url # the mechanics of the set ensure no duplicates
+
+      
+      if @options[:use_sitemap]
+        sm_url = @options[:sitemap_url] if @options[:sitemap_url]
+        sm_url = url unless sm_url
+        
+        parser = SitemapParser.new(sm_url, !!(@options[:sitemap_url]))
+
+        maps = parser.build unless @options[:crawl_limit]
+        maps = parser.build(@options[:crawl_limit]) if @options[:crawl_limit]
+
+        condensed = parser.condense
+        puts "URLS FOUND: #{condensed.urls} "
+        puts "MAPS #{maps}"
+        
+        @urls = Set.new(parser.raw_urls(condensed))
+        return true
+      end
+      
       
       cobweb = Cobweb.new(@options)
 

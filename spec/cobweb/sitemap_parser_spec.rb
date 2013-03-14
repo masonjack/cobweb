@@ -56,12 +56,49 @@ describe SitemapParser do
       result = subject.condense
       result.urls.length.should == 2
     end
+
+    it "should retrieve the raw url strings from a url object collection" do
+      subject = SitemapParser.new("http://localhost:3532/nested-sitemap.xml", true)
+      maps = subject.build
+      result = subject.condense
+
+      raw = subject.raw_urls(result)
+      raw.each { |u| u.respond_to?(:concat).should be_true }
+    end
+    
+
+    it "should limit the total number of urls to the limit specified across multiple sitemaps" do
+      pending "not yet implemented"
+    end
     
   end
+
+  context "Huge sitemap files" do
+    before(:each) do
+      @big_subject = SitemapParser.new("http://localhost:3532/detailed-sitemap.xml", true)
+    end
+    
+    it "should parse correctly" do
+      result = @big_subject.build
+      map = result.first
+      map.urls.length.should == 10000
+    end
+
+
+    it "should limit the number of urls to the limit specified" do
+      result = @big_subject.build(1000)
+      map = result.first
+      map.urls.length.should == 1000
+    end
+    
+  end
+  
 
   context "With gziped sitemaps" do
 
     pending "should extract urls from a gziped sitemap"
+    "not implemented yet"
+
 
     pending "should extract urls from a gziped siteindex that contains multiple sitemap references"
 
