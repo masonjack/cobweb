@@ -67,14 +67,16 @@ class SitemapParser
     
     @type = sitemap_type(response)
     @content = response.body
+    puts "SiteMap request result: #{@content}" 
     #puts @content
   end
   
   def sitemap_type(response)
     type = response.headers["content-type"]
     #puts "responseType:: #{type}"
-    return CobwebSitemap::XmlSitemap if type == "application/xml"
-    return CobwebSitemap::TextSitemap
+    # Only supporting xml sitemaps at this point in time
+    CobwebSitemap::XmlSitemap
+    #return CobwebSitemap::TextSitemap
   end  
   
   

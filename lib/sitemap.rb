@@ -93,7 +93,7 @@ module CobwebSitemap
 
   class Utils
     def self.retrieve(location)
-      Typhoeus::Request.new(location).run
+      Typhoeus.get(location, :followlocation => true)
     end
 
   end
