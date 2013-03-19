@@ -96,6 +96,10 @@ module CobwebSitemap
       Typhoeus.get(location, :followlocation => true)
     end
 
+
+  end
+
+  class SitemapNotFoundError < StandardError
   end
   
   

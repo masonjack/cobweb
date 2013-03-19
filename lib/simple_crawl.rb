@@ -14,6 +14,8 @@ require 'set'
       @options = setup_defaults(HashUtil.deep_symbolize_keys(options))      
     end
 
+    
+
     def retrieve(url=nil,count=0)
       puts " retrieve: count: #{count}"
       url = @options[:url] unless url
@@ -22,20 +24,13 @@ require 'set'
 
       
       if @options[:use_sitemap]
-        sm_url = @options[:sitemap_url] if @options[:sitemap_url]
-        sm_url = url unless sm_url
-        
-        parser = SitemapParser.new(sm_url, !!(@options[:sitemap_url]))
-
-        maps = parser.build unless @options[:crawl_limit]
-        maps = parser.build(@options[:crawl_limit]) if @options[:crawl_limit]
-
-        condensed = parser.condense
-        puts "URLS FOUND: #{condensed.urls} "
-        puts "MAPS #{maps}"
-        
-        @urls = Set.new(parser.raw_urls(condensed))
-        return true
+        begin
+          @urls = sitemap_retrieval(url)
+          # If there is nothing in the urls, we need to crawl normally
+          return true unless @urls.size == 0
+        rescue CobwebSitemap::SitemapNotFoundError
+          # crawl normally
+        end
       end
       
       
@@ -71,6 +66,23 @@ require 'set'
 
     private
 
+    def sitemap_retrieval(url)
+      sm_url = @options[:sitemap_url] if @options[:sitemap_url]
+      sm_url = url unless sm_url
+      
+      parser = SitemapParser.new(sm_url, !!(@options[:sitemap_url]))
+      
+      maps = parser.build unless @options[:crawl_limit]
+      maps = parser.build(@options[:crawl_limit]) if @options[:crawl_limit]
+      
+      condensed = parser.condense
+      puts "URLS FOUND: #{condensed.urls} "
+      puts "MAPS #{maps}"
+      
+      @urls = Set.new(parser.raw_urls(condensed))
+    end
+
+    
     def setup_defaults(options)
       options[:crawl_limit_by_page] = false unless options.has_key? :crawl_limit_by_page
       options[:valid_mime_types] = ["*/*"] unless options.has_key? :valid_mime_types

@@ -63,7 +63,7 @@ class SitemapParser
   def get_base_content(location)
     
     response = CobwebSitemap::Utils.retrieve(location)
-    raise "No Sitemap found" if response.code == 404
+    raise CobWebSitemap::SitemapNotFoundError "No Sitemap found" if response.code == 404
     
     @type = sitemap_type(response)
     @content = response.body
