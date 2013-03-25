@@ -12,7 +12,9 @@ class Robots
     uri = URI.parse(@options[:url])
     content = Cobweb.new(:cache => nil, :text_mime_types => ["text/html", "application/xhtml+xml", "text/plain"]).get([uri.scheme, "://", uri.host, ":", uri.port, "/", @options[:file]].join)
     if content[:mime_type][0..4] == "text/"
+
       @raw_data = parse_data(content[:body])
+      
       
       if @options.has_key?(:user_agent) && @raw_data.has_key?(@options[:user_agent].to_s.downcase.to_sym)
         @params = @raw_data[@options[:user_agent].to_s.downcase.to_sym]
@@ -35,6 +37,11 @@ class Robots
     end
     true
   end
+
+  def filtered_urls(urls)
+    urls.select { |u| allowed?(u) }
+  end
+
   
   def user_agent_settings
     @params
@@ -49,17 +56,24 @@ class Robots
   def parse_data(data)
     user_agents = {}
     lines = data.split("\n")
+    @sitemaps = []
     lines.map!{|line| line.strip}
     lines.reject!{|line| line == "" || line[0] == "#"}
     current_user_agent = nil
     
     lines.each do |line|
+      values = line.split(":")
+      
+      if line[0..6].downcase == "sitemap"
+        @sitemaps << values[1..-1].join.strip
+      end
+      
       if line[0..10].downcase == "user-agent:"
         current_user_agent = line.split(":")[1..-1].join.downcase.strip.to_sym
         user_agents[current_user_agent] = {:allow => [], :disallow => []}
       else
         if current_user_agent
-          values = line.split(":")
+          
           unless values[1..-1].join.strip == ""
             user_agents[current_user_agent][values[0].downcase.strip.to_sym] = [] unless user_agents[current_user_agent].has_key? values[0].downcase.to_sym
             user_agents[current_user_agent][values[0].downcase.strip.to_sym] << values[1..-1].join.strip
@@ -67,6 +81,9 @@ class Robots
         end
       end
     end
+    puts user_agents
+    puts @sitemaps
+    
     user_agents
   end
 end

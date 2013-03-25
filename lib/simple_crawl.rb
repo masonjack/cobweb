@@ -6,22 +6,29 @@ require 'set'
     attr_reader :content
     attr_reader :options
     attr_reader :urls
+    attr_accessor :robot
     
     def initialize(options={})
       @counter = 0
       @urls = Set.new
       @crawled = Set.new
-      @options = setup_defaults(HashUtil.deep_symbolize_keys(options))      
+      @options = setup_defaults(HashUtil.deep_symbolize_keys(options))
+      if(@options[:obey_robots])
+        @robot = Robots.new(@options)
+      end
     end
 
     
-
     def retrieve(url=nil,count=0)
       puts " retrieve: count: #{count}"
       url = @options[:url] unless url
       url = clean_url(url)
+      allowed = true
       @urls << url # the mechanics of the set ensure no duplicates
 
+      if (@robot)
+        return false unless @robot.allowed?(url)
+      end
       
       if @options[:use_sitemap]
         begin
@@ -37,7 +44,7 @@ require 'set'
       cobweb = Cobweb.new(@options)
 
       if within_crawl_limits?
-        raw_content = cobweb.get(url)
+        raw_content = cobweb.get(url) 
         
         content = CobwebModule::CrawlObject.new(raw_content, @options)
 
