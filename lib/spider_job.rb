@@ -28,7 +28,9 @@ class SpiderJob
     batch_id = content_request[:crawl_id]
 
     if (crawl.robot)
+      puts "URL size prefilter: #{urls.size}"
       urls = crawl.robot.filtered_urls(urls)
+      puts "URL size postfilter: #{urls.size}"
     end
     
     urls.each do |url|

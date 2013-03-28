@@ -15,7 +15,7 @@ class SitemapParser
       uri = Addressable::URI.parse(url)
       @location = [uri.scheme, "://", uri.host, (uri.port ? ":#{uri.port}": "") , "/", "sitemap.xml"].join
     end
-    #puts "attempting to retrieve :#{@location}"
+    puts "attempting to retrieve :#{@location}"    
     get_base_content(@location)
   end
 

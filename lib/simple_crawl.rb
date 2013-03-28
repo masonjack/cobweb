@@ -13,7 +13,8 @@ require 'set'
       @urls = Set.new
       @crawled = Set.new
       @options = setup_defaults(HashUtil.deep_symbolize_keys(options))
-      if(@options[:obey_robots])
+      if(@options[:obey_robots] == "true")
+        puts "USING ROBOTS!"
         @robot = Robots.new(@options)
       end
     end
@@ -30,7 +31,8 @@ require 'set'
         return false unless @robot.allowed?(url)
       end
       
-      if @options[:use_sitemap]
+      if @options[:use_sitemap] == "true"
+        puts "USING SITEMAP"
         begin
           @urls = sitemap_retrieval(url)
           # If there is nothing in the urls, we need to crawl normally
@@ -74,10 +76,11 @@ require 'set'
     private
 
     def sitemap_retrieval(url)
-      sm_url = @options[:sitemap_url] if @options[:sitemap_url]
+      sm_url = @options[:sitemap_url] unless @options[:sitemap_url].empty? 
       sm_url = url unless sm_url
-      
-      parser = SitemapParser.new(sm_url, !!(@options[:sitemap_url]))
+
+      sm_url_provided = (@options[:sitemap_url].empty? ? false : true ) 
+      parser = SitemapParser.new(sm_url, sm_url_provided)
       
       maps = parser.build unless @options[:crawl_limit]
       maps = parser.build(@options[:crawl_limit]) if @options[:crawl_limit]
