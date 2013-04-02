@@ -84,7 +84,7 @@ class ContentLinkParser
           tag.content.scan(attribute) {|match| array << Addressable::URI.parse(match[0]).to_s}
         rescue TypeError => te
         rescue LocalJumpError => lje
-        rescue Addressable::URI::InvalidURIError          
+        rescue Addressable::URI::InvalidURIError
         end
       end
     elsif attribute.instance_of? Proc
