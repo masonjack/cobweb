@@ -1,3 +1,4 @@
+
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 require File.expand_path(File.dirname(__FILE__) + '/../../lib/content_link_parser.rb')
 require File.expand_path(File.dirname(__FILE__) + '/../mocks_setup')
@@ -160,4 +161,26 @@ eos
       styles[0].should=="\"new'"
     end
   end
+
+  describe "hrefs that contain javascript links" do
+
+
+    it "should parse links and ignore javascript href links" do
+      @content_parser = ContentLinkParser.new("http://sample-links.com/", create_js_content())
+      links = @content_parser.links
+      #links.length.should==1
+      
+      puts links
+      links.each { |link| Addressable::URI.parse(link) }
+      links[0].should =~ /https:\/\/chrome.google.com\/*/
+    end
+    
+  end
+
+  def create_js_content()
+    s = IO.read(File.expand_path(File.dirname(__FILE__) + '/../samples/sample_crickinfo.html'))
+    s
+  end
+  
+  
 end 
