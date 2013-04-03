@@ -54,7 +54,6 @@ class Cobweb
     default_cache_manager_to                   "DummyCache"
     default_crawl_limit_to                     100
     default_use_sitemap_to                     false
-    
     puts @options
     @cache_manager = instanciate(@options[:cache_manager], @options)
     
