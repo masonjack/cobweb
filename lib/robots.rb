@@ -4,8 +4,8 @@ class Robots
   # Processes the robots.txt file
   def initialize(options)
     @options = options
-    raise "options should be a hash" unless options.kind_of? Hash
-    raise ":url is required" unless @options.has_key? :url
+    raise RobotsError, "options should be a hash" unless options.kind_of? Hash
+    raise RobotsError,":url is required" unless @options.has_key? :url
     @options[:file] = "robots.txt" unless @options.has_key? :file
     @options[:user_agent] = "cobweb" unless @options.has_key? :user_agent
     
@@ -19,11 +19,11 @@ class Robots
       if @options.has_key?(:user_agent) && @raw_data.has_key?(@options[:user_agent].to_s.downcase.to_sym)
         @params = @raw_data[@options[:user_agent].to_s.downcase.to_sym]
       else
-        raise "Wildcard user-agent is not present" unless @raw_data.has_key? :*
+        raise RobotsError, "Wildcard user-agent is not present" unless @raw_data.has_key? :*
         @params = @raw_data[:*]
       end
     else
-      raise "Invalid mime type: #{content[:content_type]}"
+      raise RobotsError, "Invalid mime type: #{content[:content_type]}"
     end
   end
   
@@ -86,4 +86,7 @@ class Robots
     
     user_agents
   end
+end
+
+class RobotsError < StandardError
 end

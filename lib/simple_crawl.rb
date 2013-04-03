@@ -15,7 +15,13 @@ require 'set'
       @options = setup_defaults(HashUtil.deep_symbolize_keys(options))
       if(@options[:obey_robots] == "true")
         puts "USING ROBOTS!"
-        @robot = Robots.new(@options)
+        begin
+          @robot = Robots.new(@options)
+        rescue RobotsError => re
+          # ignore robots from here
+          @robot = nil
+        end
+        
       end
     end
 
