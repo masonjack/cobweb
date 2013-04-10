@@ -26,13 +26,41 @@ module CobwebSitemap
       index_doc = doc.xpath("/sitemapindex")
       if index_doc.length > 0
         locations = doc.xpath("/sitemapindex/sitemap/loc")
+
+        url_count = 0
+        # more functional way to do this would be nicer
         @maps = locations.map do |location|
-          content = Utils.retrieve(location.text)
-          map_type.new(content.body, limit)
+          if limit == 0
+            build_map(location, map_type)
+          else
+            if url_count < limit
+              m = build_map(location, map_type)
+              
+              m.urls = m.urls.slice(0,limit)
+              size = m.urls.size
+              
+              if(size + url_count > limit)
+                # slice up to the limit
+                slice_size = limit - url_count
+                m.urls = m.urls.slice(0, slice_size)
+              end
+              url_count += size
+              
+              m
+            end            
+          end
+          
         end
+        @maps.reject!{|m| m.nil?}
       end
     end
 
+    private
+    def build_map(location, map_type)
+      content = Utils.retrieve(location.text)
+      m = map_type.new(content.body)
+    end
+    
   end
   
   

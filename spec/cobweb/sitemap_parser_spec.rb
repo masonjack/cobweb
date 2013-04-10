@@ -68,6 +68,10 @@ describe SitemapParser do
     
 
     it "should limit the total number of urls to the limit specified across multiple sitemaps" do
+      subject = SitemapParser.new("http://localhost:3532/large-nested-sitemap.xml", true)
+      maps = subject.build(5)
+      m = subject.condense
+      m.urls.size.should == 5
       pending "not yet implemented"
     end
     
