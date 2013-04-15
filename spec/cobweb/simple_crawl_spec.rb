@@ -47,6 +47,29 @@ describe SimpleCrawl do
     result = crawl.send(:clean_url, @options[:url])
     result.should == "http://www.eeeeeeephox.com"
   end
+
+  context "using a sitemap" do
+    before(:each) do
+      @options = {
+        :url => "http://localhost:3532/",
+        :crawl_limit_by_page => false,
+        :crawl_limit => 100,
+        :cache_manager => "DummyCache",
+        :use_sitemap => true
+      }
+      @options[:internal_urls] = []
+      uri = Addressable::URI.parse(@options[:url])
+      @options[:internal_urls] << [uri.scheme, "://", uri.host, ":", uri.inferred_port, "/*"].join
+    end
+
+    it "should get the correct number urls to crawl" do
+      crawl = SimpleCrawl.new(@options)
+      crawl.retrieve.should be_true
+      crawl.urls.size.should == 2
+    end
+      
+  end
+  
   
   context "Error cases" do
 

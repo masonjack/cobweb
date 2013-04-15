@@ -11,21 +11,27 @@ class SpiderJob
     
     if crawl.retrieve
       puts "enqueuing urls for workers" 
-      enqueue_urls(crawl.urls, content_request)
+      enqueue_urls(crawl.urls, content_request, crawl)
     else
       # Failed to start the crawling process for whatever reason, so
       # we complete the job. There will be no results for the site however
       puts "Error beginning crawl!" 
 
-      QueueManager.enqueue(content_request[:crawl_finished_queue], content_request)
+      QueueManager.queue_job(content_request[:crawl_finished_queue], content_request)
 
     end
 
   end
 
-  def self.enqueue_urls(urls, content_request)
+  def self.enqueue_urls(urls, content_request, crawl)
     queued = []
     batch_id = content_request[:crawl_id]
+
+    if (crawl.robot)
+      puts "URL size prefilter: #{urls.size}"
+      urls = crawl.robot.filtered_urls(urls)
+      puts "URL size postfilter: #{urls.size}"
+    end
     
     urls.each do |url|
       content_request[:retrieve_url] = url

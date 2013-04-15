@@ -1,5 +1,5 @@
 require 'nokogiri'
-
+require 'typhoeus'
 
 module CobwebSitemap
   
@@ -8,25 +8,81 @@ module CobwebSitemap
     attr_accessor :urls
     attr_accessor :content
 
-    def initialize(content)
-      raise "subclass must override"
+  end
+
+  class SiteIndex
+    attr_accessor :maps
+
+    # really simple somewhat silly check for index content
+    def self.index?(content)
+      content =~ /<.*sitemapindex.*>/
+    end
+
+    def initialize(content, map_type=XmlSitemap, limit=0)
+      # TODO: need to support other sitemap types, since this wont
+      # do anything should we come across a text sitemap file
+      doc = Nokogiri::XML(content)
+      doc.remove_namespaces!
+      index_doc = doc.xpath("/sitemapindex")
+      if index_doc.length > 0
+        locations = doc.xpath("/sitemapindex/sitemap/loc")
+
+        url_count = 0
+        # more functional way to do this would be nicer
+        @maps = locations.map do |location|
+          if limit == 0
+            build_map(location, map_type)
+          else
+            if url_count < limit
+              m = build_map(location, map_type)
+              
+              m.urls = m.urls.slice(0,limit)
+              size = m.urls.size
+              
+              if(size + url_count > limit)
+                # slice up to the limit
+                slice_size = limit - url_count
+                m.urls = m.urls.slice(0, slice_size)
+              end
+              url_count += size
+              
+              m
+            end            
+          end
+          
+        end
+        @maps.reject!{|m| m.nil?}
+      end
+    end
+
+    private
+    def build_map(location, map_type)
+      content = Utils.retrieve(location.text)
+      m = map_type.new(content.body)
     end
     
   end
   
   
   class XmlSitemap < Sitemap
-    def initialize(content)
+    def initialize(content, limit=0)
       @urls = []
-      @xml = Nokogiri::XML(content)
-      @xml.remove_namespaces!
-      parse(@xml)
+      xml = Nokogiri::XML(content)
+      xml.remove_namespaces!
+      parse(xml, limit)
       
     end
 
-    def parse(xml)
+    def parse(xml, limit)
       url_nodes = xml.xpath("/urlset/url")
-      @urls = url_nodes.map { |unode| SitemapUrl.build_from_xml(unode) }
+      if limit > 0
+        nodes = url_nodes.slice(0,limit)
+      else
+        nodes = url_nodes
+      end
+      
+      
+      @urls = nodes.map { |unode| SitemapUrl.build_from_xml(unode) }
     end
     
     
@@ -34,9 +90,7 @@ module CobwebSitemap
 
   class TextSitemap < Sitemap
     def initialize(content)
-      
     end
-    
   end
   
 
@@ -64,6 +118,17 @@ module CobwebSitemap
     
   end
 
+
+  class Utils
+    def self.retrieve(location)
+      Typhoeus.get(location, :followlocation => true)
+    end
+
+
+  end
+
+  class SitemapNotFoundError < StandardError
+  end
   
   
 end

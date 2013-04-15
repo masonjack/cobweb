@@ -190,7 +190,7 @@ module CobwebRequest
     
     if text_content?(existing_content[:mime_type], options)
       if (headers_access(response.headers,"content-encoding")=="gzip")
-        content[:body] = Zlib::GzipReader.new(StringIO.new(response.body)).read
+        content[:body] = Zlib::GzipReader.new(StringIO.new(response.body)).readW
       else
         content[:body] = response.body
       end
