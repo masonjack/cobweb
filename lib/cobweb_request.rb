@@ -21,7 +21,7 @@ module CobwebRequest
       redirect_limit = 10
     end
     
-    content = {:base_url => url}
+    content = {:url => url}
     http_opts = {}
     
     # check if it has already been cached
@@ -165,7 +165,7 @@ module CobwebRequest
         cache_manager.close_connection
       end
     end
-    content  
+    content
     
   end
 
