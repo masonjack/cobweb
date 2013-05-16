@@ -187,15 +187,16 @@ module CobwebRequest
     content = {}
     content[:length] = headers_access(response.headers, "content-length")
     content[:text_content] = text_content?(existing_content[:mime_type], options)
-    
+    content[:body] = ""
+    response_body = ""
     if text_content?(existing_content[:mime_type], options)
       if (headers_access(response.headers,"content-encoding")=="gzip")
-        content[:body] = Zlib::GzipReader.new(StringIO.new(response.body)).readW
+        response_body = Zlib::GzipReader.new(StringIO.new(response.body)).readW
       else
-        content[:body] = response.body
+        response_body = response.body
       end
     else
-      content[:body] = Base64.encode64(response.body)
+      response_body = Base64.encode64(response.body)
     end
     
     content[:location] = headers_access(response.headers, "location")
@@ -205,7 +206,7 @@ module CobwebRequest
     content[:headers] = HashUtil.deep_symbolize_keys(raw_hash_headers)
     
     # parse data for links
-    link_parser = ContentLinkParser.new(content[:url], content[:body])
+    link_parser = ContentLinkParser.new(content[:url], response_body)
     content[:links] = link_parser.link_data
     
     content
