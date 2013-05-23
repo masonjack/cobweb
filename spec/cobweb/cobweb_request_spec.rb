@@ -3,6 +3,12 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 class Requester
   include CobwebRequest
+  attr_accessor :options
+
+  def initialize
+    @options = {}
+  end
+  
 end
 
 
@@ -18,7 +24,7 @@ describe Cobweb do
       :processing_queue             => "CobwebProcessJob",
       :crawl_finished_queue         =>   "CobwebFinishedJob",
       :quiet                        => true,
-      :debug                        => false,
+      :debug                        => true,
       :cache                        => 300,
       :timeout                      => 10,
       :redis_options                =>  Hash.new,
@@ -62,16 +68,32 @@ describe Cobweb do
       content[:status_code].should eql 404
     end
 
+
+    it "should stop redirecting after 10 redirects. Should also not use typhoeus redirect code" do
+      content = @requester.request("http://localhost:3532/redirect-request.html", :get, DummyCache.new(nil), @default_opts)
+      content[:status_code].should == 200
+    end
+
+    it "should respond with cookies to a server that requests them" do
+      content = @requester.request("http://shop.sprint.com/mysprint/shop_landing.jsp?pagename=whysprint&INTNAV=ATG:HE:WS",
+                                   :get,
+                                   DummyCache.new(nil),
+                                   @default_opts)
+      content[:status_code].should == 200
+
+    end
+    
   end
 
   describe "head requests " do
 
     it "should return valid head data for a head request" do
-      content = @requester.request("http://oldnavy.gap.com/buy/shopping_bag.do", :head, DummyCache.new(nil), @default_opts)
-      content[:url].should eql "http://oldnavy.gap.com/buy/shopping_bag.do"
+      content = @requester.request("http://www.google.com", :head, DummyCache.new(nil), @default_opts)
+      #content[:url].should eql "http://oldnavy.gap.com/buy/shopping_bag.do"
       puts content
       content[:mime_type].should eql "text/html"
-      content[:character_set].should eql nil
+      content[:status_code].should eql 200
+      content[:character_set].should eql "US-ASCII"
     end
     
     it "should return 404 for the error code when nonexistant page is requested with head" do

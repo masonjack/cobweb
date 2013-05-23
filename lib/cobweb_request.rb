@@ -37,19 +37,19 @@ module CobwebRequest
 
       http_opts[:timeout] = options[:timeout].to_i
       http_opts[:connecttimeout] = options[:timeout].to_i
-      http_opts[:followlocation] = true if options[:follow_redirects]
-      http_opts[:maxredirs] = redirect_limit
-        
+      http_opts[:headers] = options[:headers]
       request_time = Time.now.to_f
       
       begin
         puts "Retrieving #{url }... " unless options[:quiet]
-        puts("options: #{http_opts}") if options[:debug]
+        puts("request options: #{http_opts}") if options[:debug]
         
         #if options[:cookies]
         #  request_options[ 'Cookie']= options[:cookies]
         #end
 
+
+        
         if type == :get
           response = Typhoeus::Request.new(url, http_opts).run
           puts "get done" if options[:debug]
@@ -62,53 +62,43 @@ module CobwebRequest
           raise SocketError, "Could not resolve hostname", caller
         end
         
-        # if options[:follow_redirects] and response.code.to_i >= 300 and response.code.to_i < 400
-        #   puts "redirected... " unless options[:quiet]
+        if options[:follow_redirects] and response.code.to_i >= 300 and response.code.to_i < 400
+          opts = {
+            :options => options,
+            :cache_manager => cache_manager,
+            :type => type,
+            :uri => uri,
+            :redirect_limit => redirect_limit
+          }
+          content = redirect_handling(response, opts)
+        else
           
-        #   # get location to redirect to
-        #   puts "response - headers #{response.headers}"
-        #   location = response.headers["location"] || response.headers["Location"]
-        #   puts "redirecting to : #{location}, limit == #{redirect_limit}"
-        #   uri = UriHelper.join_no_fragment(uri, location)
-          
-        #   # decrement redirect limit
-        #   redirect_limit = redirect_limit - 1
-
-        #   raise RedirectError, "Redirect Limit reached" if redirect_limit == 0
-        #   cookies = get_cookies(response)
-
-        #   # get the content from redirect location
-        #   content = request(uri,type, cache_manager, options.merge(:redirect_limit => redirect_limit, :cookies => cookies))
-        #   content[:url] = uri.to_s
-        #   content[:redirect_through] = [] if content[:redirect_through].nil?
-        #   content[:redirect_through].insert(0, url)
-          
-        #   content[:response_time] = Time.now.to_f - request_time
-        # else
-        content[:response_time] = Time.now.to_f - request_time
-        content[:redirect_through] = response.redirections if response.redirect_count > 0
+          content[:response_time] = Time.now.to_f - request_time
+          content[:redirect_through] = response.redirections if response.redirect_count > 0
         
-        puts "Retrieved." if options[:debug]
-
+          puts "Retrieved." if options[:debug]
+          
         # create the content container
-        content[:url] = uri.to_s
-        content[:status_code] = response.code.to_i
-        content[:mime_type] = ""
+          content[:url] = uri.to_s
+          content[:status_code] = response.code.to_i
+          content[:mime_type] = ""
+          
+          content[:cookies] = parse_cookies(response.headers)
         
-        unless headers_access(response.headers, "content-type") == nil
-          ctype = ContentProcessor.determine_content_type(response.body, response.headers)
-          content[:character_set] = ctype.character_set
-          content[:content_type] = ctype.content_type
-          content[:mime_type] = ctype.mime_type
+          unless headers_access(response.headers, "content-type") == nil
+            ctype = ContentProcessor.determine_content_type(response.body, response.headers)
+            content[:character_set] = ctype.character_set
+            content[:content_type] = ctype.content_type
+            content[:mime_type] = ctype.mime_type
           
           
-          if type == :get
-            content.merge! body_processing(response, content, options) 
-            content[:body] = ctype.convert_to_utf8(response.body)
+            if type == :get
+              content.merge! body_processing(response, content, options) 
+              content[:body] = ctype.convert_to_utf8(response.body)
+            end
           end
-        end
         
-        #end
+        end
         
         # add content to cache if required
         if options[:cache]
@@ -180,6 +170,59 @@ module CobwebRequest
     p
   end
 
+  def redirect_handling(response, opts)
+    
+    options = opts[:options]
+    uri = opts[:uri]
+    redirect_limit = opts[:redirect_limit]
+    
+    puts "redirected... " unless options[:quiet]
+    h = response.headers
+    # get location to redirect to
+    puts "response - headers #{response.headers}"
+    location = headers_access(h,"location") || headers_access(h, "Location")
+    puts "redirecting to : #{location}, limit == #{redirect_limit}"
+
+    uri = UriHelper.join_no_fragment(uri, location)
+    
+    # decrement redirect limit
+    redirect_limit = redirect_limit - 1
+    
+    raise RedirectError, "Redirect Limit reached" if redirect_limit == 0
+    
+    cookies = parse_cookies(response.headers)
+    # get the content from redirect location
+    content = request(uri,opts[:type], opts[:cache_manager], options.merge(:redirect_limit => redirect_limit,
+                                                                           :headers => {:cookies => cookies}))
+    content[:url] = uri.to_s
+    content[:redirect_through] = [] if content[:redirect_through].nil?
+    content[:redirect_through].insert(0, uri.to_s)
+    
+    content
+  end
+  
+
+  # Returns array of cookies from headers
+  def parse_cookies(headers)
+    all_cookies = headers_access(headers, "Set-Cookie") || headers_access(headers, "set-cookie")
+    unless all_cookies.nil?
+      cookies_array = Array.new
+      if(all_cookies.respond_to?(:each))
+         all_cookies.each { |cookie|
+           cookies_array.push(cookie.split('; ')[0])
+         }
+        cookies = cookies_array.join('; ')
+      elsif (all_cookies.respond_to?(:split))
+        cookies = all_cookies.split('; ')[0]
+      else
+        nil
+      end
+      
+    end
+  end
+
+   
+  
   def body_processing(response, existing_content, options=nil)
 
     puts "BODY PROCESSING!" if options[:debug]

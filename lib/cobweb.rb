@@ -74,18 +74,6 @@ class Cobweb
     request
   end
   
-  # Returns array of cookies from content
-  def get_cookies(response)
-    all_cookies = response.headers["Set-Cookie"] || response.headers["set-cookie"]
-    unless all_cookies.nil?
-      cookies_array = Array.new
-      all_cookies.each { |cookie|
-        cookies_array.push(cookie.split('; ')[0])
-      }
-      cookies = cookies_array.join('; ')
-    end
-  end
-
   # Performs a HTTP GET request to the specified url applying the options supplied in addition to the options being used for the current cobweb instance
   def get(url, options = {})
     request(url, :get, @cache_manager, options)
