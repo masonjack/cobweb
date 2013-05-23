@@ -42,7 +42,7 @@ module CobwebRequest
       
       begin
         puts "Retrieving #{url }... " unless options[:quiet]
-        puts("request options: #{http_opts}") if options[:debug]
+        puts("request options: #{http_opts}")
         
         #if options[:cookies]
         #  request_options[ 'Cookie']= options[:cookies]
@@ -74,8 +74,9 @@ module CobwebRequest
         else
           
           content[:response_time] = Time.now.to_f - request_time
-          content[:redirect_through] = response.redirections if response.redirect_count > 0
-        
+          #content[:redirect_through] = response.redirections if response.redirect_count > 0
+          #content[:redirect_through] = [] if content[:redirect_through].nil?
+          
           puts "Retrieved." if options[:debug]
           
         # create the content container
@@ -107,50 +108,29 @@ module CobwebRequest
           puts "Not storing in cache as cache disabled" if options[:debug]
         end
 
+      rescue Addressable::URI::InvalidURIError => e
+        puts "ERROR Invalid URI: #{e.message}"
+        # passing url is deliberate in this case
+        content = blank_content(e, url, request_time)
+        content[:mime_type] = "error/invalid_uri"
+        
       rescue RedirectError => e
         puts "ERROR RedirectError: #{e.message}"
         
-        ## generate a blank content
-        content = {}
-        content[:url] = uri.to_s
-        content[:response_time] = Time.now.to_f - request_time
-        content[:status_code] = 0
-        content[:length] = 0
-        content[:body] = ""
-        content[:error] = e.message
+        content = blank_content(e, uri, request_time)
         content[:mime_type] = "error/dnslookup"
-        content[:headers] = {}
-        content[:links] = {}
         
       rescue SocketError => e
         puts "ERROR SocketError: #{e.message}"
         
-        ## generate a blank content
-        content = {}
-        content[:url] = uri.to_s
-        content[:response_time] = Time.now.to_f - request_time
-        content[:status_code] = 0
-        content[:length] = 0
-        content[:body] = ""
-        content[:error] = e.message
+        content = blank_content(e, uri, request_time)
         content[:mime_type] = "error/dnslookup"
-        content[:headers] = {}
-        content[:links] = {}
-        
       rescue Timeout::Error => e
         puts "ERROR Timeout::Error: #{e.message}"
-        
-        ## generate a blank content
-        content = {}
-        content[:url] = uri.to_s
-        content[:response_time] = Time.now.to_f - request_time
-        content[:status_code] = 0
-        content[:length] = 0
-        content[:body] = ""
-        content[:error] = e.message
+
+        content = blank_content(e, uri, request_time)
         content[:mime_type] = "error/serverdown"
-        content[:headers] = {}
-        content[:links] = {}
+
       ensure
         cache_manager.close_connection
       end
@@ -159,6 +139,20 @@ module CobwebRequest
     
   end
 
+  def blank_content(e, uri, request_time)
+    content = {}
+    content[:url] = uri.to_s
+    content[:response_time] = Time.now.to_f - request_time
+    content[:status_code] = 0
+    content[:length] = 0
+    content[:body] = ""
+    content[:error] = e.message
+    content[:mime_type] = "error/serverdown"
+    content[:headers] = {}
+    content[:links] = {}
+  end
+  
+  
   def get(url, options = nil)
   end
 
@@ -193,7 +187,7 @@ module CobwebRequest
     cookies = parse_cookies(response.headers)
     # get the content from redirect location
     content = request(uri,opts[:type], opts[:cache_manager], options.merge(:redirect_limit => redirect_limit,
-                                                                           :headers => {:cookies => cookies}))
+                                                                           :headers => {:Cookie => cookies}))
     content[:url] = uri.to_s
     content[:redirect_through] = [] if content[:redirect_through].nil?
     content[:redirect_through].insert(0, uri.to_s)
