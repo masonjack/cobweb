@@ -33,7 +33,7 @@ module CobwebRequest
       # retrieve data
       if uri.scheme == "https"
         http_opts[:ssl_verifypeer] = false
-        http_opts[:ssl_verifyhostpeer] = 0
+        http_opts[:ssl_verifyhost] = 0
         http_opts[:sslversion] = :sslv3
       end
 
@@ -43,7 +43,8 @@ module CobwebRequest
       http_opts[:maxredirs] = redirect_limit
       http_opts[:cookiefile] = "tmp"
       http_opts[:cookiejar] = "tmp"
-
+      http_opts[:verbose] = true
+      
       request_time = Time.now.to_f
       
       begin
