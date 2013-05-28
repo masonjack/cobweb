@@ -63,16 +63,16 @@ class SitemapParser
   def get_base_content(location)
     
     response = CobwebSitemap::Utils.retrieve(location)
-    raise CobwebSitemap::SitemapNotFoundError, "No Sitemap found" if response.code == 404
+    raise CobwebSitemap::SitemapNotFoundError, "No Sitemap found" if response[:status_code] == 404
     
     @type = sitemap_type(response)
-    @content = response.body
+    @content = response[:body]
     puts "SiteMap request result: #{@content}" 
     #puts @content
   end
   
   def sitemap_type(response)
-    type = response.headers["content-type"]
+    type = response[:content_type]
     #puts "responseType:: #{type}"
     # Only supporting xml sitemaps at this point in time
     CobwebSitemap::XmlSitemap
