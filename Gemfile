@@ -20,7 +20,7 @@ gem 'aws-s3'
 gem "resque-batched-job", :git => "git://github.com/ephox/resque-batched-job"
 gem 'simplecov', :require => false, :group => :test
 
-gem 'typhoeus', ">= 0.5.1"
+gem 'typhoeus', "~> 0.6.3"
 
 if ENV["TRAVIS_RUBY_VERSION"].nil?
   gem 'thin'

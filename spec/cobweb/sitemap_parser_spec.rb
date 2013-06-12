@@ -96,6 +96,20 @@ describe SitemapParser do
     end
     
   end
+
+  context "whacky sitemaps at sprint" do
+    before(:each) do
+      @sprint = SitemapParser.new("https://shop.sprint.com/sitemap.xml", true)
+      
+    end
+
+
+    it "should download and parse correctly" do
+      maps = @sprint.build
+      m = @sprint.condense
+      m.urls.size.should == 2577
+    end
+  end
   
 
   context "With gziped sitemaps" do
