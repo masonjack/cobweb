@@ -12,8 +12,8 @@ class SitemapParser
       @location = url
     else
       # we are guessing the sitemap location here
-      uri = Addressable::URI.parse(url)
-      @location = [uri.scheme, "://", uri.host, (uri.port ? ":#{uri.port}": "") , "/", "sitemap.xml"].join
+      uri_path = CobwebCommon.get_host_path(url.to_s)
+      @location = "#{uri_path}/sitemap.xml"
     end
     puts "attempting to retrieve :#{@location}"    
     get_base_content(@location)
