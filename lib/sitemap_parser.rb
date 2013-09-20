@@ -61,13 +61,20 @@ class SitemapParser
   private
   
   def get_base_content(location)
-    
     response = CobwebSitemap::Utils.retrieve(location)
     raise CobwebSitemap::SitemapNotFoundError, "No Sitemap found" if response[:status_code] == 404
-    
+
+    # parse response.body strictly
+    begin
+      xml_doc = Nokogiri::XML(response[:body]){ |config| config.strict }
+    rescue Nokogiri::XML::SyntaxError => e
+      puts "SITEMAP INVALID: Caught exception: #{e}"
+      raise CobwebSitemap::SitemapNotValid, "Sitemap not valid"
+    end
+
     @type = sitemap_type(response)
     @content = response[:body]
-    puts "SiteMap request result: #{@content}" 
+    puts "SiteMap request result: #{@content}"
     #puts @content
   end
   

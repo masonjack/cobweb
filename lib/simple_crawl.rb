@@ -45,6 +45,8 @@ require 'set'
           return true unless @urls.size == 0
         rescue CobwebSitemap::SitemapNotFoundError
           # crawl normally
+        rescue CobwebSitemap::SitemapNotValid
+          # crawl normally
         end
       end
       

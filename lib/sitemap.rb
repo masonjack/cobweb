@@ -133,6 +133,8 @@ module CobwebSitemap
 
   class SitemapNotFoundError < StandardError
   end
-  
-  
+
+  class SitemapNotValid < StandardError
+  end
+
 end
