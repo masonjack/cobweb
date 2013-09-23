@@ -44,8 +44,10 @@ require 'set'
           # If there is nothing in the urls, we need to crawl normally
           return true unless @urls.size == 0
         rescue CobwebSitemap::SitemapNotFoundError
+          puts "SITEMAP NOT FOUND"
           # crawl normally
         rescue CobwebSitemap::SitemapNotValid
+          puts "SITEMAP INVALID"
           # crawl normally
         end
       end

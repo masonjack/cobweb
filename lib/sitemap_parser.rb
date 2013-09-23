@@ -61,6 +61,9 @@ class SitemapParser
   private
   
   def get_base_content(location)
+    #if it ends with html or htm, we do not support it - we only do xml atm
+    raise CobwebSitemap::SitemapNotValid, "Sitemap not valid" if location.to_s.end_with?(".htm", ".html")
+
     response = CobwebSitemap::Utils.retrieve(location)
     raise CobwebSitemap::SitemapNotFoundError, "No Sitemap found" if response[:status_code] == 404
 
