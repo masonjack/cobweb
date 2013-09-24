@@ -79,7 +79,7 @@ class ContentProcessor
     match = /<.*body.*>/.match(content)
     
     if match
-      return "text/html"
+      return "text/html-assumed"
     else
       return "application/octet-stream"
     end

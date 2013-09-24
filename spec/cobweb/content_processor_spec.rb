@@ -73,7 +73,7 @@ describe ContentProcessor do
     it "should detect 'text/html' in simple non header related document" do
       doc = "kajsdjkfasdkjfdshkjafsdjkhjkafdskjhafsd<   body onclick='something'> </body>"
       subject = ContentProcessor.determine_content_type(doc, @headers)
-      subject.mime_type.should == "text/html"
+      subject.mime_type.should == "text/html-assumed"
       
     end
 
