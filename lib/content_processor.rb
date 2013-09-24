@@ -18,13 +18,16 @@ class ContentProcessor
     
     ct = headers_access(headers, "content-type")
     mime_type = ct.split(";")[0].strip if ct
-    
-    if ct.include?(";")
-      charset = ct[ct.index(";")+2..-1] if !ct.nil? and ct.include?(";")
-      charset = charset[charset.index("=")+1..-1] if charset and charset.include?("=")
-      character_set = charset
+
+    if ct
+      if ct.include?(";")
+        charset = ct[ct.index(";")+2..-1] if !ct.nil? and ct.include?(";")
+        charset = charset[charset.index("=")+1..-1] if charset and charset.include?("=")
+        character_set = charset
       
+      end
     end
+    
 
     [mime_type, character_set]
   end
