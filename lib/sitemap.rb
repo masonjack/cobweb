@@ -1,5 +1,7 @@
 require 'nokogiri'
 require 'typhoeus'
+require 'ostruct'
+
 
 module CobwebSitemap
   
@@ -58,7 +60,7 @@ module CobwebSitemap
     private
     def build_map(location, map_type)
       content = Utils.retrieve(location.text)
-      m = map_type.new(content.body)
+      m = map_type.new(content[:body])
     end
     
   end
@@ -121,7 +123,9 @@ module CobwebSitemap
 
   class Utils
     def self.retrieve(location)
-      Typhoeus.get(location, :followlocation => true)
+      c = Cobweb.new({})
+      resp = c.get(location)
+      resp
     end
 
 
