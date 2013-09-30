@@ -5,9 +5,9 @@ require File.expand_path(File.dirname(__FILE__) + '/../mocks_setup')
 describe CobwebLinks do
 
   before(:each) do
-  
+
     @base_url = "http://www.baseurl.com/"
-  
+
     @default_headers = {"Cache-Control" => "private, max-age=0",
                         "Date" => "Wed, 10 Nov 2010 09:06:17 GMT",
                         "Expires" => "-1",
@@ -17,27 +17,23 @@ describe CobwebLinks do
                         "Server" => "gws",
                         "X-XSS-Protection" => "1; mode=block"}
 
-  end  
+  end
 
-  
+
   it "should generate a cobweb_links object" do
     CobwebLinks.new(:internal_urls => [""]).should be_an_instance_of CobwebLinks
   end
-
-  it "should raise error with no internal links" do
-    expect {CobwebLinks.new()}.to raise_error(InternalUrlsMissingError)
-  end    
   it "should not raise error with missing external links" do
     expect {CobwebLinks.new(:internal_urls => ["http://domain_one.com/"])}.to_not raise_error(InternalUrlsMissingError)
   end
-  it "should raise error with invalid internal links" do
-    expect {CobwebLinks.new(:internal_urls => "")}.to raise_error(InvalidUrlsError)
+  it "should make internal_links default to blank array for invalid internal links" do
+    expect {CobwebLinks.new(:internal_urls => "")}.to_not raise_error(InvalidUrlsError)
   end
   it "should raise error with invalid external links" do
     expect {CobwebLinks.new(:internal_urls => [], :external_urls => "")}.to raise_error(InvalidUrlsError)
   end
-    
-  
+
+
   describe "internal and external links" do
     it "should only return internal links" do
       cobweb_links = CobwebLinks.new(:internal_urls => ["http://domain_one.com/"], :external_urls => ["http://domain_two.com/"])
@@ -47,9 +43,10 @@ describe CobwebLinks do
     it "should not return external links" do
       cobweb_links = CobwebLinks.new(:internal_urls => ["http://domain_one.com/"], :external_urls => ["http://domain_two.com/"])
       cobweb_links.external?("http://domain_one.com/pageone.html").should be_false
-      cobweb_links.external?("http://domain_two.com/pageone.html").should be_true      
-      cobweb_links.external?("http://external.com/pageone.html").should be_true      
+      cobweb_links.external?("http://domain_two.com/pageone.html").should be_true
+      cobweb_links.external?("http://external.com/pageone.html").should be_true
     end
+
     it "should override internal links with external links" do
       cobweb_links = CobwebLinks.new(:internal_urls => ["http://domain_one.com/"], :external_urls => ["http://domain_one.com/blog"])
       cobweb_links.internal?("http://domain_one.com/pageone.html").should be_true
@@ -67,12 +64,12 @@ describe CobwebLinks do
     cobweb_links.internal?("http://www.domain_one.com/pageone.html?url=http://www.domain_two.com/pageone.html").should be_true
     cobweb_links.internal?("http://www.domain_two.com/pageone.html?url=http://www.domain_one.com/pageone.html").should be_false
   end
-  
+
   describe "using wildcards" do
     it "should match internal links with wildcards" do
       cobweb_links = CobwebLinks.new(:internal_urls => ["http://*.domain_one.com/"], :external_urls => ["http://blog.domain_one.com/"])
       cobweb_links.internal?("http://www.domain_one.com/pageone.html").should be_true
-      cobweb_links.internal?("http://images.domain_one.com/logo.png").should be_true      
+      cobweb_links.internal?("http://images.domain_one.com/logo.png").should be_true
       cobweb_links.internal?("http://blog.domain_one.com/pageone.html").should be_false
     end
     it "should match external links with wildcards" do
@@ -92,7 +89,7 @@ describe CobwebLinks do
       cobweb_links.internal?("http://www.domain_one.com/pageone.html").should be_false
       cobweb_links.internal?("http://blog.domain_one.com/pageone.html").should be_false
       cobweb_links.internal?("http://www.marketing.domain_one.com/pageone.html").should be_true
-      cobweb_links.internal?("http://blog.designers.domain_one.com/pagetwo.html").should be_true      
+      cobweb_links.internal?("http://blog.designers.domain_one.com/pagetwo.html").should be_true
     end
     it "should allow multiple country tlds with wildcards" do
       cobweb_links = CobwebLinks.new(:internal_urls => ["http://*.domain_one.*/", "http://*.domain_one.*.*/"])
@@ -106,5 +103,5 @@ describe CobwebLinks do
       cobweb_links.internal?("http://blog.domain_one.ie/pageone.html").should be_true
     end
   end
-  
+
 end

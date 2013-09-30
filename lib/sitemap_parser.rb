@@ -12,8 +12,8 @@ class SitemapParser
       @location = url
     else
       # we are guessing the sitemap location here
-      uri = Addressable::URI.parse(url)
-      @location = [uri.scheme, "://", uri.host, (uri.port ? ":#{uri.port}": "") , "/", "sitemap.xml"].join
+      uri_path = CobwebCommon.get_host_path(url.to_s)
+      @location = "#{uri_path}/sitemap.xml"
     end
     puts "attempting to retrieve :#{@location}"    
     get_base_content(@location)
@@ -63,16 +63,16 @@ class SitemapParser
   def get_base_content(location)
     
     response = CobwebSitemap::Utils.retrieve(location)
-    raise CobwebSitemap::SitemapNotFoundError, "No Sitemap found" if response.code == 404
+    raise CobwebSitemap::SitemapNotFoundError, "No Sitemap found" if response[:status_code] == 404
     
     @type = sitemap_type(response)
-    @content = response.body
+    @content = response[:body]
     puts "SiteMap request result: #{@content}" 
     #puts @content
   end
   
   def sitemap_type(response)
-    type = response.headers["content-type"]
+    type = response[:content_type]
     #puts "responseType:: #{type}"
     # Only supporting xml sitemaps at this point in time
     CobwebSitemap::XmlSitemap

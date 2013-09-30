@@ -35,7 +35,10 @@ class UrlProcessingJob
 
     if(content_options[:additional_url_processors])
       content_options[:additional_url_processors].each do |processor|
-        start_processor(processor, content_to_send)
+        if start_processor(processor, content_to_send).kind_of? Resque::TermException
+          QueueManager.requeue_job(self, bid, content_options)
+          return
+        end
       end
     end
     
