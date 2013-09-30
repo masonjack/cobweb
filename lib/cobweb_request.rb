@@ -99,35 +99,20 @@ module CobwebRequest
         content[:url] = uri.to_s
         content[:status_code] = response.code.to_i
         content[:mime_type] = ""
-<<<<<<< HEAD
+
         
-        
-          ctype = ContentProcessor.determine_content_type(response.body, response.headers)
-          content[:character_set] = ctype.character_set
-          content[:content_type] = ctype.content_type
-          content[:mime_type] = ctype.mime_type
-          
-          
-          if type == :get
-            content.merge! body_processing(response, content, options)
-            content[:body] = ctype.convert_to_utf8(response.body)
-          end
-        
-        
-=======
         
         ctype = ContentProcessor.determine_content_type(response.body, response.headers)
         content[:character_set] = ctype.character_set
         content[:content_type] = ctype.content_type
         content[:mime_type] = ctype.mime_type
-
-
+        
+          
         if type == :get
           content.merge! body_processing(response, content, options)
           content[:body] = ctype.convert_to_utf8(response.body)
         end
-       
->>>>>>> ffad5df15775a7dfcda724184c77687248a84e8f
+        
         #end
 
         # add content to cache if required
