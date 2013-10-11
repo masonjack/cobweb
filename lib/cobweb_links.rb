@@ -1,10 +1,10 @@
-require File.join(File.dirname(__FILE__), 'cobweb_common')
+require File.join(File.dirname(__FILE__), 'cobweb_utilities_links')
 
 # CobwebLinks processes links to determine whether they are internal or external links
 class CobwebLinks
   def self.default_internal_urls(options)
     if options[:internal_urls].nil? || options[:internal_urls].empty?
-      uri_path = CobwebCommon.get_host_path(options[:base_url].to_s)
+      uri_path = CobwebUtilitiesLinks.get_host_path(options[:base_url].to_s)
       options[:internal_urls] = []
       options[:internal_urls] = ["#{uri_path}/*"] unless uri_path.empty?
     end

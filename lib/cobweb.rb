@@ -63,9 +63,12 @@ class Cobweb
   # This method starts the resque based crawl and enqueues the base_url
   def start(base_url)
     raise ":base_url is required" unless base_url
+    #get the effective url here and let it sort out whether the '/' at th end is appended or not
+
+    effective_base_url = CobwebUtilitiesLinks.get_effective_url(base_url)
     request = {
       :crawl_id => Digest::SHA1.hexdigest("#{Time.now.to_i}.#{Time.now.usec}"),
-      :url => base_url 
+      :url => effective_base_url
     }  
 
     @options = CobwebLinks.default_internal_urls(@options)
