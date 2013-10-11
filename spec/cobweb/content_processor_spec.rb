@@ -3,12 +3,13 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 describe ContentProcessor do
 
-  before(:each) do
-    @headers = {}
-    @headers["content-type"] = "text/html; charset=utf-8"
-  end
   
   context "When performing Character Set detection" do
+
+    before(:each) do
+      @headers = {}
+      @headers["content-type"] = "text/html; charset=utf-8"
+    end
 
     it "should return the expected UTF8 character set" do
       utf8 = File.dirname(__FILE__) + '/../samples/encoding_samples/utf-8.html'
@@ -21,7 +22,7 @@ describe ContentProcessor do
       
     end
 
-    it "should return the expected windows-1252 character set" do
+    pending "should return the expected windows-1252 character set" do
       win1252 = File.dirname(__FILE__) + '/../samples/encoding_samples/windows-1252.html'
       s = File.open(win1252, 'rb') { |f| f.read }
       s.encoding.name.should == "WINDOWS-1252"
@@ -31,7 +32,7 @@ describe ContentProcessor do
       
     end
 
-    it "should return the expected iso-2022-7bit character set" do
+    pending "should return the expected iso-2022-7bit character set" do
       
       iso7b = File.dirname(__FILE__) + '/../samples/encoding_samples/iso-8859-9.html'
       s = File.open(iso7b, 'rb') { |f| f.read }
@@ -45,7 +46,12 @@ describe ContentProcessor do
   end
 
   context "when converting" do
-    it "should convert from another encoding into utf8" do
+    before(:each) do
+      @headers = {}
+      @headers["content-type"] = "text/html; charset=utf-8"
+    end
+
+    pending "should convert from another encoding into utf8" do
       win1252 = File.dirname(__FILE__) + '/../samples/encoding_samples/windows-1252.html'
       s = File.open(win1252, 'rb') { |f| f.read }
       
@@ -54,8 +60,27 @@ describe ContentProcessor do
 
       converted = subject.convert_to_utf8(s)
       converted.encoding.name.should == "UTF-8"
+    end
+    
+  end
 
+
+  context "when detecting body content mime-type" do
+    before(:each) do
+      @headers = {}
+    end
+    
+    it "should detect 'text/html' in simple non header related document" do
+      doc = "kajsdjkfasdkjfdshkjafsdjkhjkafdskjhafsd<   body onclick='something'> </body>"
+      subject = ContentProcessor.determine_content_type(doc, @headers)
+      subject.mime_type.should == "text/html-assumed"
       
+    end
+
+    it "should detect 'application/octet-stream' in a bad doc" do
+      doc = "kajsdjkfasdkjfdshkjafsdjkhjkafdskjhafsd<   bdy onclick='something'> </bod>"
+      subject = ContentProcessor.determine_content_type(doc, @headers)
+      subject.mime_type.should == "application/octet-stream"
     end
     
   end
