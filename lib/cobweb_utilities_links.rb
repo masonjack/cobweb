@@ -29,7 +29,7 @@ module CobwebUtilitiesLinks
 
   # gets the last effective url (max of 10 redirects) if the url is redirecting to somewhere
   def self.get_effective_url(link)
-    return check_link(link,"head").effective_url
+    return check_link(link,"get").effective_url
   end
 
   def self.get_host_path(uri)
