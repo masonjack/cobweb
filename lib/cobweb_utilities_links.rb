@@ -15,7 +15,7 @@ module CobwebUtilitiesLinks
                                      :method => method,
                                      :ssl_verifypeer =>false,
                                      :ssl_verifyhost => 0,
-                                     :sslversion => :sslv3,
+                                     #:sslversion => :sslv3,
                                      :followlocation => true,
                                      :timeout => 10,
                                      :verbose => false,
