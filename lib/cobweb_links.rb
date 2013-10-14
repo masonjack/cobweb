@@ -1,4 +1,4 @@
-require File.join(File.dirname(__FILE__), 'links')
+require File.join(File.dirname(__FILE__), 'links_cobweb')
 
 # CobwebLinks processes links to determine whether they are internal or external links
 class CobwebLinks
