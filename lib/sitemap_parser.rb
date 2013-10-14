@@ -12,7 +12,7 @@ class SitemapParser
       @location = url
     else
       # we are guessing the sitemap location here
-      uri_path = CobwebUtilitiesLinks.get_host_path(url.to_s)
+      uri_path = LinksCobweb.get_host_path(url.to_s)
       @location = "#{uri_path}/sitemap.xml"
     end
     puts "attempting to retrieve :#{@location}"    

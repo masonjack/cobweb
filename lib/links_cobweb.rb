@@ -1,27 +1,27 @@
 require 'stringio'
 require 'typhoeus'
 
-module CobwebUtilitiesLinks
+module LinksCobweb
+
 
   VALID_RESPONSE_CODES = [*(100..102), *(200..208), 226, 250, *(300..308)]
   INVALID_RESPONSE_CODES = [0, 400, *(402..406), *(408..462), *(494..499), *(500..511), 550, 551, 598, 599]
+  MAX_REDIRECTS = 10
+  COOKIE_JAR = "tmp"
 
   # returns the response for a given link & method
   # response is a hash
   def self.check_link(link, method)
-    max_redirs = 10
-    cookie_jar = "tmp"
-    response = Typhoeus::Request.new(link.to_s,
-                                     :method => method,
+    response = Typhoeus::Request.new(link.to_s, :method => method,
                                      :ssl_verifypeer =>false,
                                      :ssl_verifyhost => 0,
                                      #:sslversion => :sslv3,
                                      :followlocation => true,
                                      :timeout => 10,
                                      :verbose => false,
-                                     :cookiefile => cookie_jar,
-                                     :cookiejar => cookie_jar,
-                                     :maxredirs => max_redirs,
+                                     :cookiefile => COOKIE_JAR,
+                                     :cookiejar => COOKIE_JAR,
+                                     :maxredirs => MAX_REDIRECTS,
                                      :headers => { 'Accept' => "*/*"}).run
     #Rails.logger.debug("link: #{link.to_s}, method: #{method}, response = #{response.inspect}")
     return response
@@ -29,7 +29,7 @@ module CobwebUtilitiesLinks
 
   # gets the last effective url (max of 10 redirects) if the url is redirecting to somewhere
   def self.get_effective_url(link)
-    return check_link(link,"get").effective_url
+    return check_link(link, :get).effective_url
   end
 
   def self.get_host_path(uri)
